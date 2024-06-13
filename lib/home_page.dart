@@ -210,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Add Playlist',
         backgroundColor: colorScheme?.primary,
         foregroundColor: colorScheme?.onPrimary,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.playlist_add),
       ),
     );
   }
