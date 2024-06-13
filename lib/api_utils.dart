@@ -110,6 +110,7 @@ class APIClient {
     HttpServer server;
     try {
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 3069);
+      GetIt.I<Logger>().info('Server started on ${server.address}:${server.port}');
     } on SocketException {
       GetIt.instance<Logger>().info('Server already running');
       return Future.value(Uri());

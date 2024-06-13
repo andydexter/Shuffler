@@ -4,6 +4,8 @@ An auxiliary app that allows you to freely shuffle your Spotify playlists and ad
 
 ## Getting Started
 
+> This app is not working on web at the moment.
+
 API app credentials are read from `assets/APICredentials.json`. Before running the app make sure to create this file in the following format;
 
 ```json
