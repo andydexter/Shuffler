@@ -57,25 +57,30 @@ class APIClient {
   final tokenEndpoint = Uri.parse("https://accounts.spotify.com/api/token");
   final scope = 'user-modify-playback-state';
   final storage = const FlutterSecureStorage();
+  Logger lg = GetIt.instance<Logger>();
 
   Future<oauth2.Client> getClient() async {
     final credentialsJson = await rootBundle.loadString('assets/APICredentials.json');
+    lg.info('Successfully loaded credentials from assets');
     final credentials = jsonDecode(credentialsJson);
     final clientId = credentials['clientId'];
     final clientSecret = credentials['clientSecret'];
     if (await storage.containsKey(key: 'credentials')) {
+      lg.info('Found stored refresh token');
       String? credentialsJson = await storage.read(key: 'credentials');
       var credentials = oauth2.Credentials.fromJson(credentialsJson!);
       var wowClient = oauth2.Client(credentials, identifier: clientId, secret: clientSecret);
       if (wowClient.credentials.isExpired) {
+        lg.info('Refreshing credentials');
         wowClient = await wowClient.refreshCredentials();
       }
       await storage.write(key: 'credentials', value: wowClient.credentials.toJson());
       try {
         await wowClient.get(Uri.parse('https://api.spotify.com/v1/artists/2uYWxilOVlUdk4oV9DvwqK'));
+        lg.info('Successfully authenticated with client');
         return wowClient;
       } catch (e) {
-        GetIt.instance<Logger>().severe('Error with client: $e');
+        lg.severe('Error with client: $e');
       }
     }
     var grant = oauth2.AuthorizationCodeGrant(
@@ -96,11 +101,11 @@ class APIClient {
   }
 
   Future<void> launchURL(Uri uri) async {
-    GetIt.instance<Logger>().info('Launching URL: $uri');
+    lg.info('Launching URL: $uri');
     try {
       await launchUrl(uri);
     } catch (e) {
-      GetIt.instance<Logger>().severe('Error launching URL: $e');
+      lg.severe('Error launching URL: $e');
       return Future.error('Error launching URL: $e');
     }
   }
@@ -110,9 +115,9 @@ class APIClient {
     HttpServer server;
     try {
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 3069);
-      GetIt.I<Logger>().info('Server started on ${server.address}:${server.port}');
+      lg.info('Server started on ${server.address}:${server.port}');
     } on SocketException {
-      GetIt.instance<Logger>().info('Server already running');
+      lg.info('Server already running');
       return Future.value(Uri());
     }
     server.listen((HttpRequest request) async {
