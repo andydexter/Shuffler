@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/components/progress_dialog.dart';
@@ -132,7 +133,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
                             ),
                           ],
                         )))
-                .catchError((error, stack) => showDialog(
+                .onError((error, stack) => showDialog(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
                           title: Text(error.toString()),
@@ -158,25 +159,26 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
     ProgressDialog progressDialog = ProgressDialog(
         message: 'Adding tracks to queue...', controller: controller, context: context, upperBound: tracks.length);
     controller.addListener(() {
-      if (controller.value == 1.0) {
-        progressDialog.pop();
-      }
+      if (controller.isDismissed || controller.value == 1.0) progressDialog.pop();
     });
     showDialog(barrierDismissible: false, context: context, builder: (context) => progressDialog);
+    GetIt.I<Logger>().info('ProgressDialog shown');
     for (int i = 0; i < tracks.length; i++) {
-      bool success = true;
+      String error = '';
       await apiUtils.addTrackToQueue(tracks[i]).catchError((onError) {
         progressDialog.pop();
-        success = false;
+        error = onError.toString();
       });
-      if (!success) {
-        return;
+      if (error.isNotEmpty) {
+        GetIt.I<Logger>().warning(error);
+        return Future.error(error);
       }
       if (tracks.length > 80) {
         await Future.delayed(const Duration(milliseconds: 400));
       }
-      await progressDialog.increment();
+      await controller.animateTo((i + 1) / tracks.length, duration: const Duration(milliseconds: 100));
     }
+    GetIt.I<Logger>().info('${tracks.length} Tracks added to queue');
   }
 
   @override

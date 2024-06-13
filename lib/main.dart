@@ -7,13 +7,23 @@ import 'package:get_it/get_it.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
+import 'dart:developer' as developer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Logger.root.level = Level.ALL;
-  // Logger.root.onRecord.listen((record) {
-  //   print('${record.level.name}: ${record.time}: ${record.message}');
-  // });
+  Logger.root.onRecord.listen((record) {
+    developer.log(
+      record.message,
+      name: record.loggerName,
+      time: record.time,
+      sequenceNumber: record.sequenceNumber,
+      level: record.level.value,
+      zone: record.zone,
+      error: record.error,
+      stackTrace: record.stackTrace,
+    );
+  });
   GetIt.instance.registerSingleton<AppDatabase>(AppDatabase());
   GetIt.instance.registerSingleton<Logger>(Logger('Shuffler'));
   GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());
