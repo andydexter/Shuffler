@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shuffler/apiUtils.dart';
+import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
-import 'package:shuffler/components/progressDialog.dart';
+import 'package:shuffler/components/progress_dialog.dart';
 import 'package:shuffler/components/track.dart';
 import 'package:shuffler/database/entities.dart';
 

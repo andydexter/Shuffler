@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shuffler/apiUtils.dart';
+import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
-import 'package:shuffler/components/themeDialog.dart';
+import 'package:shuffler/components/theme_dialog.dart';
 import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/main.dart';
-import 'package:shuffler/playlistView.dart';
+import 'package:shuffler/playlist_view.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class MyHomePage extends StatefulWidget {

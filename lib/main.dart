@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shuffler/database/entities.dart';
-import 'package:shuffler/homePage.dart';
-import 'package:shuffler/apiUtils.dart';
+import 'package:shuffler/home_page.dart';
+import 'package:shuffler/api_utils.dart';
 import 'package:get_it/get_it.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,9 +11,9 @@ import 'package:logging/logging.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.time}: ${record.message}');
-  });
+  // Logger.root.onRecord.listen((record) {
+  //   print('${record.level.name}: ${record.time}: ${record.message}');
+  // });
   GetIt.instance.registerSingleton<AppDatabase>(AppDatabase());
   GetIt.instance.registerSingleton<Logger>(Logger('Shuffler'));
   GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());

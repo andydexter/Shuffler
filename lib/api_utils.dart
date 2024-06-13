@@ -66,7 +66,6 @@ class APIClient {
     if (await storage.containsKey(key: 'credentials')) {
       String? credentialsJson = await storage.read(key: 'credentials');
       var credentials = oauth2.Credentials.fromJson(credentialsJson!);
-      // print(credentials.toJson());
       var wowClient = oauth2.Client(credentials, identifier: clientId, secret: clientSecret);
       if (wowClient.credentials.isExpired) {
         wowClient = await wowClient.refreshCredentials();
@@ -76,7 +75,7 @@ class APIClient {
         await wowClient.get(Uri.parse('https://api.spotify.com/v1/artists/2uYWxilOVlUdk4oV9DvwqK'));
         return wowClient;
       } catch (e) {
-        print(e);
+        GetIt.instance<Logger>().severe('Error with client: $e');
       }
     }
     var grant = oauth2.AuthorizationCodeGrant(
@@ -112,7 +111,7 @@ class APIClient {
     try {
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 3069);
     } on SocketException {
-      print('Server already running');
+      GetIt.instance<Logger>().info('Server already running');
       return Future.value(Uri());
     }
     server.listen((HttpRequest request) async {
@@ -122,7 +121,7 @@ class APIClient {
       // Complete the completer with the redirect URI
       completer.complete(redirectUri);
 
-      print('Received request for ${request.uri.toString()}');
+      GetIt.instance<Logger>().info('Received request for ${request.uri.toString()}');
       request.response
         ..statusCode = HttpStatus.ok
         ..headers.contentType = ContentType.html
