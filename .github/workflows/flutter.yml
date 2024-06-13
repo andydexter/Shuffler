@@ -34,7 +34,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: ./pubspec.yaml # path
+          flutter-version: 3.22.0 # flutter version
           
       - name: Display Flutter version
         run: flutter --version
