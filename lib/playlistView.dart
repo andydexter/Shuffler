@@ -193,7 +193,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
         floatingActionButton: FloatingActionButton(
           onPressed: _addPlaylistToQueue,
           tooltip: 'Add to queue',
-          child: const Icon(Icons.check),
+          child: const Icon(Icons.playlist_add_check),
         ));
   }
 }

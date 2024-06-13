@@ -19,6 +19,7 @@ class PlaylistTable extends Table {
 @DriftDatabase(tables: [PlaylistTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+  AppDatabase.customExecutor(super.e);
 
   Playlist rowToPlaylist(PlaylistTableData playlist) {
     return Playlist(

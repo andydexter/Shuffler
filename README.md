@@ -1,16 +1,16 @@
-# shuffler
+# Shuffler
 
-A new Flutter project.
+An auxiliary app that allows you to freely shuffle your Spotify playlists and add them to your Spotify Queue.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+API app credentials are read from `assets/APICredentials.json`. Before running the app make sure to create this file in the following format;
 
-A few resources to get you started if this is your first Flutter project:
+```json
+{
+    "clientId": "YOUR_CLIENT_ID",
+    "clientSecret": "YOUR_CLIENT_SECRET"
+}
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+You can then run the app just like any other flutter app

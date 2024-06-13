@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
@@ -51,8 +52,6 @@ class APIUtils {
 }
 
 class APIClient {
-  final clientId = 'a2af86983c3a441184ae445309aade2c';
-  final clientSecret = '04bd450400f54dadaa64e7a2981c4458';
   final redirectUrl = Uri.parse('http://localhost:3069');
   final authorizationEndpoint = Uri.parse("https://accounts.spotify.com/authorize");
   final tokenEndpoint = Uri.parse("https://accounts.spotify.com/api/token");
@@ -60,6 +59,10 @@ class APIClient {
   final storage = const FlutterSecureStorage();
 
   Future<oauth2.Client> getClient() async {
+    final credentialsJson = await rootBundle.loadString('assets/APICredentials.json');
+    final credentials = jsonDecode(credentialsJson);
+    final clientId = credentials['clientId'];
+    final clientSecret = credentials['clientSecret'];
     if (await storage.containsKey(key: 'credentials')) {
       String? credentialsJson = await storage.read(key: 'credentials');
       var credentials = oauth2.Credentials.fromJson(credentialsJson!);

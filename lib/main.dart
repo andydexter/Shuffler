@@ -18,38 +18,50 @@ void main() async {
   GetIt.instance.registerSingleton<Logger>(Logger('Shuffler'));
   GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());
   GetIt.instance.registerSingleton<PackageInfo>(await PackageInfo.fromPlatform());
+  GetIt.instance.registerSingleton<SharedPreferences>(await SharedPreferences.getInstance());
   Color colorSeed = await getPreferenceColor();
   Brightness brightness = await getPreferenceBrightness();
   runApp(MyApp(ColorScheme.fromSeed(seedColor: colorSeed, brightness: brightness)));
 }
 
 Future<Color> getPreferenceColor() async {
-  return await SharedPreferences.getInstance().then((prefs) {
-    return Color(prefs.getInt('colorSeed') ?? 0xff062b16);
-  });
+  return Color(GetIt.instance<SharedPreferences>().getInt('colorSeed') ?? 0xff062b16);
 }
 
 Future<Brightness> getPreferenceBrightness() async {
-  return await SharedPreferences.getInstance().then((prefs) {
-    return prefs.getBool('isDark') ?? true ? Brightness.dark : Brightness.light;
-  });
+  return GetIt.instance<SharedPreferences>().getBool('isDark') ?? true ? Brightness.dark : Brightness.light;
 }
 
 Future<void> setPreferenceBrightness(Brightness brightness) async {
-  return await SharedPreferences.getInstance().then((prefs) {
-    prefs.setBool('isDark', brightness == Brightness.dark);
-  });
+  await GetIt.instance<SharedPreferences>().setBool('isDark', brightness == Brightness.dark);
 }
 
 Future<void> setPreferenceColor(Color color) async {
-  return await SharedPreferences.getInstance().then((prefs) {
-    prefs.setInt('colorSeed', color.value);
-  });
+  await GetIt.instance<SharedPreferences>().setInt('colorSeed', color.value);
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final ColorScheme colorScheme;
   const MyApp(this.colorScheme, {super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ColorScheme? colorScheme;
+
+  void setAppColorScheme(ColorScheme colorScheme) {
+    setState(() {
+      this.colorScheme = colorScheme;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    setAppColorScheme(widget.colorScheme);
+  }
 
   // This widget is the root of your application.
   @override
