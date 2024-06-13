@@ -14,6 +14,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
 
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +34,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: pubspec.yaml # path
+          flutter-version-file: ./pubspec.yaml # path
           
       - name: Display Flutter version
         run: flutter --version
