@@ -25,8 +25,11 @@ void main() async {
     );
   });
   GetIt.instance.registerSingleton<AppDatabase>(AppDatabase());
-  GetIt.instance.registerSingleton<Logger>(Logger('Shuffler'));
-  GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());
+  try {
+    GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());
+  } catch (e) {
+    Logger("Shuffler/main").severe('Error getting OAuth2 client: $e');
+  }
   GetIt.instance.registerSingleton<PackageInfo>(await PackageInfo.fromPlatform());
   GetIt.instance.registerSingleton<SharedPreferences>(await SharedPreferences.getInstance());
   Color colorSeed = await getPreferenceColor();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/components/error_dialog.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/components/progress_dialog.dart';
 import 'package:shuffler/components/track.dart';
@@ -19,6 +20,7 @@ class PlaylistView extends StatefulWidget {
 class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMixin {
   final APIUtils apiUtils = APIUtils();
   final AppDatabase appDB = GetIt.instance<AppDatabase>();
+  final Logger lg = Logger("Shuffler/PlaylistView");
 
   @override
   void initState() {
@@ -51,17 +53,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
               );
             } else if (snapshot.hasError ||
                 (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
-              return AlertDialog(
-                title: Text(snapshot.error.toString()),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('Close'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              );
+              return ErrorDialog(errorMessage: snapshot.error.toString());
             } else {
               return const AlertDialog(
                 title: Text('Loading tracks...'),
@@ -133,19 +125,9 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
                             ),
                           ],
                         )))
-                .onError((error, stack) => showDialog(
-                    context: context,
-                    builder: (BuildContext context) => AlertDialog(
-                          title: Text(error.toString()),
-                          actions: <Widget>[
-                            TextButton(
-                              child: const Text('Close'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        )))
+                .catchError((error) => {
+                      showErrorDialog(context, error.toString()),
+                    })
         });
   }
 
@@ -162,15 +144,15 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
       if (controller.isDismissed || controller.value == 1.0) progressDialog.pop();
     });
     showDialog(barrierDismissible: false, context: context, builder: (context) => progressDialog);
-    GetIt.I<Logger>().info('ProgressDialog shown');
+    lg.info('ProgressDialog shown');
     for (int i = 0; i < tracks.length; i++) {
       String error = '';
-      await apiUtils.addTrackToQueue(tracks[i]).catchError((onError) {
+      await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) {
         progressDialog.pop();
-        error = onError.toString();
+        error = errorMsg;
       });
       if (error.isNotEmpty) {
-        GetIt.I<Logger>().warning(error);
+        lg.severe("Add Track to queue error: $error");
         return Future.error(error);
       }
       if (tracks.length > 80) {
@@ -178,7 +160,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
       }
       await controller.animateTo((i + 1) / tracks.length, duration: const Duration(milliseconds: 100));
     }
-    GetIt.I<Logger>().info('${tracks.length} Tracks added to queue');
+    lg.info('${tracks.length} Tracks added to queue');
   }
 
   @override
