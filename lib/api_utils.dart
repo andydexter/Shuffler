@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:shuffler/components/playlist.dart';
@@ -13,10 +14,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class APIUtils {
   final oauth2.Client client = GetIt.instance<oauth2.Client>();
+  final Logger lg = Logger("Shuffler/APIUtils");
   APIUtils();
 
   Future<Playlist> getPlaylist(String playlistID) async {
-    Map playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID'))).body);
+    Map playlist;
+    try {
+      playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID'))).body);
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    }
 
     String imgUrl = playlist['images'][0]['url'];
 
@@ -32,7 +40,13 @@ class APIUtils {
     List<Track> tracks = List.empty(growable: true);
     String? nextUrl = 'https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks';
     do {
-      Map tracklist = jsonDecode((await client.get(Uri.parse(nextUrl!))).body);
+      Map tracklist;
+      try {
+        tracklist = jsonDecode((await client.get(Uri.parse(nextUrl!))).body);
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      }
       for (var item in tracklist['items']) {
         tracks.add(Track.fromJson(item));
       }
@@ -43,7 +57,13 @@ class APIUtils {
   }
 
   Future<void> addTrackToQueue(Track track) async {
-    var response = await client.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}'));
+    Response response;
+    try {
+      response = await client.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}'));
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    }
     if (response.statusCode != 204) {
       return Future.error("Error adding track to queue: ${jsonDecode(response.body)['error']['message']}");
     }
@@ -57,7 +77,7 @@ class APIClient {
   final tokenEndpoint = Uri.parse("https://accounts.spotify.com/api/token");
   final scope = 'user-modify-playback-state';
   final storage = const FlutterSecureStorage();
-  Logger lg = GetIt.instance<Logger>();
+  Logger lg = Logger("Shuffler/APIClient");
 
   Future<oauth2.Client> getClient() async {
     final credentialsJson = await rootBundle.loadString('assets/APICredentials.json');
@@ -127,7 +147,7 @@ class APIClient {
       // Complete the completer with the redirect URI
       completer.complete(redirectUri);
 
-      GetIt.instance<Logger>().info('Received request for ${request.uri.toString()}');
+      lg.info('Received request for ${request.uri.toString()}');
       request.response
         ..statusCode = HttpStatus.ok
         ..headers.contentType = ContentType.html

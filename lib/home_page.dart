@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/components/error_dialog.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/components/theme_dialog.dart';
 import 'package:shuffler/database/entities.dart';
@@ -29,6 +31,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Playlist> playlists = List.empty(growable: true);
   final appDB = GetIt.instance<AppDatabase>();
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  final Logger lg = Logger("Shuffler/MyHomePage");
   ColorScheme? colorScheme;
 
   @override
@@ -71,21 +74,26 @@ class _MyHomePageState extends State<MyHomePage> {
     ).then((_) => {
           if (controller.text.isNotEmpty)
             {
-              apiUtils.getPlaylist(controller.text.split('/').last.split('?').first).then((playlist) => {
-                    appDB.persistPlaylist(playlist),
-                    setState(() {
-                      playlists.add(playlist);
-                    })
-                  }),
-              showGeneralDialog(
-                  context: context,
-                  pageBuilder: (context, anim1, anim2) =>
-                      AlertDialog(title: const Text('Playlist added'), actions: <Widget>[
-                        TextButton(
-                          child: const Text('Close'),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ]))
+              apiUtils
+                  .getPlaylist(controller.text.split('/').last.split('?').first)
+                  .then((playlist) => {
+                        appDB.persistPlaylist(playlist),
+                        setState(() {
+                          playlists.add(playlist);
+                        }),
+                        showGeneralDialog(
+                            context: context,
+                            pageBuilder: (context, anim1, anim2) =>
+                                AlertDialog(title: const Text('Playlist added'), actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('Close'),
+                                    onPressed: () => Navigator.of(context).pop(),
+                                  ),
+                                ]))
+                      })
+                  .onError((error, stack) => {
+                        showErrorDialog(context, error.toString()),
+                      }),
             }
         });
   }

@@ -14,10 +14,6 @@ class ProgressDialog extends StatelessWidget {
     Navigator.of(context).pop();
   }
 
-  Future<void> increment() async {
-    await controller.animateTo(controller.value + (1.0 / upperBound), duration: const Duration(milliseconds: 100));
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
