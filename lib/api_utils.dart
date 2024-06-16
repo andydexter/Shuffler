@@ -139,6 +139,9 @@ class APIClient {
     } on SocketException {
       lg.info('Server already running');
       return Future.value(Uri());
+    } catch (e) {
+      lg.severe('Error starting server: $e');
+      return Future.error('Error starting server: $e');
     }
     server.listen((HttpRequest request) async {
       // Handle the request
@@ -151,7 +154,6 @@ class APIClient {
       request.response
         ..statusCode = HttpStatus.ok
         ..headers.contentType = ContentType.html
-        //..write('<h1>Received request</h1><p>You can now close this tab</p>')
         ..write('<html><body><script type="text/javascript">window.close();</script></body></html>')
         ..close();
 
