@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
@@ -88,6 +89,13 @@ class APIUtils {
       return Future.error("Error adding track to queue: ${jsonDecode(response.body)['error']['message']}");
     }
     return Future.value();
+  }
+
+  Widget getImage(String url) {
+    return Image.network(
+      url,
+      errorBuilder: (context, error, stackTrace) => const FlutterLogo(),
+    );
   }
 }
 

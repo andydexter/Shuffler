@@ -23,7 +23,9 @@ You can then run the app just like any other flutter app
 
 ## Documentation / API reference
 
-You can view the generated dartdoc by opening `/doc/api/index.html` in a browser or by running:
+You can generate the documentation by running `dart doc .`
+
+You can then view the generated dartdoc by opening `/doc/api/index.html` in a browser or by running:
 
 ```bash
 $ dart pub global activate dhttpd

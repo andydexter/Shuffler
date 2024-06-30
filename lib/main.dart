@@ -27,6 +27,7 @@ void main() async {
   GetIt.instance.registerSingleton<AppDatabase>(AppDatabase());
   try {
     GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());
+    GetIt.instance.registerSingleton<APIUtils>(APIUtils());
   } catch (e) {
     Logger("Shuffler/main").severe('Error getting OAuth2 client: $e');
   }
@@ -100,7 +101,7 @@ class _MyAppState extends State<MyApp> {
         colorScheme: colorScheme,
         useMaterial3: true,
       ),
-      home: const MyHomePage(),
+      home: MyHomePage(),
     );
   }
 }

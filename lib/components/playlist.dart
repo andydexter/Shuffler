@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/track.dart';
 import 'dart:math';
 
@@ -18,10 +20,7 @@ class Playlist {
         padding: const EdgeInsets.all(12.0),
         child: ListTile(
           onTap: onClick,
-          leading: Image.network(
-            imgUrl,
-            errorBuilder: (context, error, stackTrace) => const FlutterLogo(),
-          ),
+          leading: GetIt.I<APIUtils>().getImage(imgUrl),
           title: Text(
             name,
             style: TextStyle(color: textColor),
@@ -36,5 +35,24 @@ class Playlist {
     shuffledTracks.shuffle(Random());
 
     return shuffledTracks;
+  }
+
+  @override
+  String toString() {
+    return "<Playlist: $name, $id, $spotifyID, $imgUrl, $tracks>";
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is Playlist) {
+      return spotifyID == other.spotifyID;
+    }
+    return false;
+  }
+
+  @override
+  int get hashCode {
+    return name.hashCode ^ spotifyID.hashCode ^ imgUrl.hashCode ^ tracks.hashCode;
   }
 }
