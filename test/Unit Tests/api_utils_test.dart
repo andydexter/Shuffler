@@ -72,13 +72,13 @@ void main() {
     final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
 
     when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
-        .thenThrow(SocketException('No internet connection'));
+        .thenThrow(const SocketException('No internet connection'));
 
     expect(apiUtils.getTracksForPlaylist(playlist), throwsA(equals("Couldn't connect to the internet")));
   });
 
   test('Should add track to user\'s queue', () async {
-    final track = Track(title: 'Test Track', uri: 'test_uri');
+    const track = Track(title: 'Test Track', uri: 'test_uri');
 
     when(mockClient.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}')))
         .thenAnswer((_) async => Response('', 204));
@@ -89,7 +89,7 @@ void main() {
   });
 
   test('Should handle error when adding track to user\'s queue', () async {
-    final track = Track(title: 'Test Track', uri: 'test_uri');
+    const track = Track(title: 'Test Track', uri: 'test_uri');
 
     when(mockClient.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}')))
         .thenAnswer((_) async => Response(
