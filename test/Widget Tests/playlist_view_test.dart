@@ -37,10 +37,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
-    await tester.tap(find.text('Close'));
-    await tester.pumpAndSettle();
-
     expect(find.text('Test Playlist'), findsOneWidget);
     for (Track track in tracks) {
       expect(find.text(track.title), findsOneWidget);
@@ -78,7 +74,9 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Close'));
+    expect(find.text("Tracks loaded!"), findsOneWidget);
+    await tester.pump((find.byType(SnackBar).evaluate().first.widget as SnackBar).duration);
+
     await tester.pumpAndSettle();
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();

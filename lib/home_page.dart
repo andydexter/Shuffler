@@ -40,9 +40,34 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     playlists = widget.playlists;
-    appDB.getAllPlaylists().then((value) => setState(() {
-          playlists.addAll(value);
-        }));
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadPlaylists());
+  }
+
+  Future<void> loadPlaylists() {
+    showDialog(
+        context: context,
+        builder: (context) => FutureBuilder(
+            future: appDB.getAllPlaylists(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Center(child: Text('Playlists loaded!')),
+                        duration: Duration(seconds: 1),
+                      ));
+                      playlists.addAll(snapshot.data as List<Playlist>);
+                    }));
+                Navigator.of(context).pop();
+              } else if (snapshot.hasError ||
+                  (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
+                return ErrorDialog(errorMessage: snapshot.error.toString());
+              }
+              return const AlertDialog(
+                title: Text('Loading playlists...'),
+                content: CircularProgressIndicator(),
+              );
+            }));
+    return Future.value();
   }
 
   void _addPlaylist() {

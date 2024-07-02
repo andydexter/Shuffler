@@ -68,6 +68,23 @@ void main() {
     expect(result, equals(expectedTracks));
   });
 
+  test('Should retrieve tracks for a playlist with pagination', () async {
+    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final tracklistJsonPage1 = HelperMethods.generateTracks(5);
+    tracklistJsonPage1['next'] = 'URL to next page of tracks';
+    final tracklistJsonPage2 = HelperMethods.generateTracks(4, start: 6);
+    final expectedTracks = HelperMethods.generateExpectedTracks(9);
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJsonPage1), 200));
+    when(mockClient.get(Uri.parse('URL to next page of tracks')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJsonPage2), 200));
+
+    final result = await apiUtils.getTracksForPlaylist(playlist);
+
+    expect(result, equals(expectedTracks));
+  });
+
   test('Should handle error when retrieving tracks for a playlist', () async {
     final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
 
@@ -103,9 +120,9 @@ void main() {
 }
 
 class HelperMethods {
-  static Map generateTracks(int count) {
-    Map tracklistJson = {'items': []};
-    for (int i = 1; i <= count; i++) {
+  static Map generateTracks(int count, {int start = 1}) {
+    Map tracklistJson = {'items': [], 'next': null};
+    for (int i = start; i < count + start; i++) {
       tracklistJson['items'].add({
         'track': {
           'name': 'Track $i',
