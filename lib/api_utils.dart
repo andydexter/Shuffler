@@ -18,10 +18,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// When instantiating an [APIUtils] object, there must be a valid [oauth2.Client] client available on [GetIt].
 
 class APIUtils {
-  final oauth2.Client client = GetIt.instance<oauth2.Client>();
+  final oauth2.Client client;
   final Logger lg = Logger("Shuffler/APIUtils");
 
-  APIUtils();
+  APIUtils(this.client);
 
   /// Retrieves a playlist from Spotify API based on the provided playlist ID.
   ///
@@ -92,6 +92,7 @@ class APIUtils {
   }
 
   Widget getImage(String url) {
+    if (url == '') return const FlutterLogo();
     return Image.network(
       url,
       errorBuilder: (context, error, stackTrace) => const FlutterLogo(),

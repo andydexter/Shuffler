@@ -171,7 +171,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
         body: ListView.builder(
             itemCount: widget.playlist.tracks.length,
             itemBuilder: (context, index) {
-              return widget.playlist.tracks[index];
+              return widget.playlist.tracks[index].getWidget();
             }),
         floatingActionButton: FloatingActionButton(
           onPressed: _addPlaylistToQueue,

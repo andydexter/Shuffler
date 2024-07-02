@@ -133,8 +133,7 @@ void main() {
   });
 
   tearDown(() async {
-    GetIt.instance
-        .unregister(instance: GetIt.instance<AppDatabase>(), disposingFunction: (AppDatabase db) => db.close());
+    GetIt.instance.get<AppDatabase>().close();
     GetIt.instance.reset();
   });
 }
