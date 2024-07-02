@@ -6,7 +6,6 @@ import 'package:shuffler/components/error_dialog.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/components/progress_dialog.dart';
 import 'package:shuffler/components/track.dart';
-import 'package:shuffler/database/entities.dart';
 
 class PlaylistView extends StatefulWidget {
   final Playlist playlist;
@@ -18,8 +17,7 @@ class PlaylistView extends StatefulWidget {
 }
 
 class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMixin {
-  final APIUtils apiUtils = APIUtils();
-  final AppDatabase appDB = GetIt.instance<AppDatabase>();
+  final APIUtils apiUtils = GetIt.I<APIUtils>();
   final Logger lg = Logger("Shuffler/PlaylistView");
 
   @override
@@ -115,7 +113,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
                 .then((_) => showDialog(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
-                          title: const Text('Tracks added to queue'),
+                          title: const Text('Tracks added to queue!'),
                           actions: <Widget>[
                             TextButton(
                               child: const Text('Close'),
@@ -155,6 +153,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
         lg.severe("Add Track to queue error: $error");
         return Future.error(error);
       }
+      // Delay to avoid rate limiting
       if (tracks.length > 80) {
         await Future.delayed(const Duration(milliseconds: 400));
       }
@@ -172,7 +171,7 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
         body: ListView.builder(
             itemCount: widget.playlist.tracks.length,
             itemBuilder: (context, index) {
-              return widget.playlist.tracks[index];
+              return widget.playlist.tracks[index].getWidget();
             }),
         floatingActionButton: FloatingActionButton(
           onPressed: _addPlaylistToQueue,

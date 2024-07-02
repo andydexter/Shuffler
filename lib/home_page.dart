@@ -11,7 +11,7 @@ import 'package:shuffler/playlist_view.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+  MyHomePage({super.key});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -22,13 +22,15 @@ class MyHomePage extends StatefulWidget {
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
 
+  final List<Playlist> playlists = List.empty(growable: true);
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  APIUtils apiUtils = APIUtils();
-  List<Playlist> playlists = List.empty(growable: true);
+  APIUtils apiUtils = GetIt.I<APIUtils>();
+  late final List<Playlist> playlists;
   final appDB = GetIt.instance<AppDatabase>();
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final Logger lg = Logger("Shuffler/MyHomePage");
@@ -37,8 +39,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    playlists = widget.playlists;
     appDB.getAllPlaylists().then((value) => setState(() {
-          playlists = value;
+          playlists.addAll(value);
         }));
   }
 
@@ -74,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
     ).then((_) => {
           if (controller.text.isNotEmpty)
             {
+              lg.info("Adding Playlist with input: ", controller.text),
               apiUtils
                   .getPlaylist(controller.text.split('/').last.split('?').first)
                   .then((playlist) => {
@@ -84,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         showGeneralDialog(
                             context: context,
                             pageBuilder: (context, anim1, anim2) =>
-                                AlertDialog(title: const Text('Playlist added'), actions: <Widget>[
+                                AlertDialog(title: const Text('Playlist Added!'), actions: <Widget>[
                                   TextButton(
                                     child: const Text('Close'),
                                     onPressed: () => Navigator.of(context).pop(),

@@ -4,7 +4,6 @@ import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/home_page.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:get_it/get_it.dart';
-import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
 import 'dart:developer' as developer;
@@ -26,7 +25,7 @@ void main() async {
   });
   GetIt.instance.registerSingleton<AppDatabase>(AppDatabase());
   try {
-    GetIt.instance.registerSingleton<oauth2.Client>(await APIClient().getClient());
+    GetIt.instance.registerSingleton<APIUtils>(APIUtils(await APIClient().getClient()));
   } catch (e) {
     Logger("Shuffler/main").severe('Error getting OAuth2 client: $e');
   }
@@ -76,6 +75,12 @@ class _MyAppState extends State<MyApp> {
     setAppColorScheme(widget.colorScheme);
   }
 
+  @override
+  void dispose() async {
+    super.dispose();
+    await GetIt.I<AppDatabase>().close();
+  }
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -100,7 +105,7 @@ class _MyAppState extends State<MyApp> {
         colorScheme: colorScheme,
         useMaterial3: true,
       ),
-      home: const MyHomePage(),
+      home: MyHomePage(),
     );
   }
 }
