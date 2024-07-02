@@ -75,6 +75,13 @@ class _MyAppState extends State<MyApp> {
     setAppColorScheme(widget.colorScheme);
   }
 
+  @override
+  void dispose() async {
+    await GetIt.I<AppDatabase>().close();
+    GetIt.I.reset();
+    super.dispose();
+  }
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
