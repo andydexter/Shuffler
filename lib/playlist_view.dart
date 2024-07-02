@@ -36,28 +36,22 @@ class _PlaylistViewState extends State<PlaylistView> with TickerProviderStateMix
           future: apiUtils.getTracksForPlaylist(widget.playlist),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-              WidgetsBinding.instance
-                  .addPostFrameCallback((_) => setState(() => widget.playlist.tracks = snapshot.data!));
-              return AlertDialog(
-                title: const Text('Tracks loaded'),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('Close'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              );
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Center(child: Text('Tracks loaded!')),
+                  duration: Duration(seconds: 2),
+                ));
+                setState(() => widget.playlist.tracks = snapshot.data!);
+              });
+              Navigator.of(context).pop();
             } else if (snapshot.hasError ||
                 (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
               return ErrorDialog(errorMessage: snapshot.error.toString());
-            } else {
-              return const AlertDialog(
-                title: Text('Loading tracks...'),
-                content: CircularProgressIndicator(),
-              );
             }
+            return const AlertDialog(
+              title: Text('Loading tracks...'),
+              content: CircularProgressIndicator(),
+            );
           }),
     );
   }

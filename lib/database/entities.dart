@@ -1,13 +1,15 @@
 import 'package:drift/drift.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'connect_db.dart' as db_conn;
 part 'entities.g.dart';
 
 class PlaylistTable extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text()();
-  TextColumn get imgUrl => text().nullable()();
   TextColumn get spotifyID => text()();
+
+  @override
+  Set<Column> get primaryKey => {spotifyID};
 }
 
 @DriftDatabase(tables: [PlaylistTable])
@@ -15,33 +17,38 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(db_conn.openConnection());
   AppDatabase.customExecutor(super.e);
 
-  Playlist rowToPlaylist(PlaylistTableData playlist) {
-    return Playlist(
-        name: playlist.name,
-        spotifyID: playlist.spotifyID,
-        imgUrl: playlist.imgUrl ?? '',
-        tracks: const [],
-        id: playlist.id);
+  Future<Playlist> rowToPlaylist(PlaylistTableData playlist) async {
+    return await GetIt.I<APIUtils>().getPlaylist(playlist.spotifyID);
   }
 
   PlaylistTableCompanion playlistToRow(Playlist playlist) {
-    return PlaylistTableCompanion.insert(
-        name: playlist.name, imgUrl: Value(playlist.imgUrl), spotifyID: playlist.spotifyID);
+    return PlaylistTableCompanion.insert(spotifyID: playlist.spotifyID);
   }
 
   Future<List<Playlist>> getAllPlaylists() async {
-    return await select(playlistTable).map((row) => rowToPlaylist(row)).get();
+    List<PlaylistTableData> playlists = await select(playlistTable).get();
+    return Future.wait(playlists.map((playlist) => rowToPlaylist(playlist)));
   }
 
   Future<void> persistPlaylist(Playlist playlist) async {
-    if ((await (select(playlistTable)..where((tbl) => tbl.spotifyID.equals(playlist.spotifyID))).get()).isNotEmpty) {
-      await (update(playlistTable)..where((tbl) => tbl.spotifyID.equals(playlist.spotifyID)))
-          .write(playlistToRow(playlist));
-    } else {
+    if ((await (select(playlistTable)..where((tbl) => tbl.spotifyID.equals(playlist.spotifyID))).get()).isEmpty) {
       await into(playlistTable).insert(playlistToRow(playlist));
     }
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (m) async => await m.createAll(),
+      onUpgrade: (m, from, to) async {
+        if (from < 3 && to == 3) {
+          m.database.customStatement('ALTER TABLE playlist ADD PRIMARY KEY (spotifyID)');
+          m.database.customStatement('ALTER TABLE playlist DROP COLUMN imgUrl, name, id');
+        }
+      },
+    );
+  }
 }

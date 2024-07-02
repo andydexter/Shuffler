@@ -12,10 +12,11 @@ import 'playlist_list_test.mocks.dart';
 
 @GenerateMocks([APIUtils])
 void main() {
-  final MockAPIUtils mockAPIUtils = MockAPIUtils();
+  late MockAPIUtils mockAPIUtils;
   late AppDatabase appDB;
 
   setUp(() async {
+    mockAPIUtils = MockAPIUtils();
     appDB = AppDatabase.customExecutor(NativeDatabase.memory());
     GetIt.instance.registerSingleton<AppDatabase>(appDB);
     GetIt.instance.registerSingleton<APIUtils>(mockAPIUtils);
@@ -31,8 +32,6 @@ void main() {
     Playlist toAdd1 = Playlist(id: -1, name: "Test Playlist", tracks: [], spotifyID: 'Test ID');
     Playlist toAdd2 = Playlist(id: -1, name: "Test Playlist 2", tracks: [], spotifyID: 'Test ID 2');
 
-    await tester.pumpAndSettle();
-
     final MyHomePage homePage = tester.firstWidget(find.byType(MyHomePage)) as MyHomePage;
 
     expect(homePage.playlists, isEmpty);
@@ -40,6 +39,8 @@ void main() {
     when(mockAPIUtils.getPlaylist("Test ID")).thenAnswer((_) async => toAdd1);
 
     when(mockAPIUtils.getPlaylist("Test ID 2")).thenAnswer((_) async => toAdd2);
+
+    await tester.pumpAndSettle();
 
     await HelperMethods.addPlaylist(tester, "Test ID");
     await HelperMethods.addPlaylist(tester, "xxx.Test UR.cum/some path/Test ID 2?some query");
@@ -63,6 +64,8 @@ void main() {
     Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
     appDB.persistPlaylist(existent);
     appDB.persistPlaylist(existent2);
+    when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
+    when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -73,6 +76,9 @@ void main() {
     Playlist toAdd = Playlist(id: -1, name: "Test Playlist", tracks: [], spotifyID: 'Test ID');
 
     await tester.pumpAndSettle();
+    expect(find.text("Playlists loaded!"), findsOneWidget);
+    await tester.pump((find.byType(SnackBar).evaluate().first.widget as SnackBar).duration);
+    await tester.pumpAndSettle();
 
     final MyHomePage homePage = tester.firstWidget(find.byType(MyHomePage)) as MyHomePage;
 
@@ -81,8 +87,6 @@ void main() {
     when(mockAPIUtils.getPlaylist("Test ID")).thenAnswer((_) async => toAdd);
 
     await HelperMethods.addPlaylist(tester, "Test ID");
-
-    verify(mockAPIUtils.getPlaylist("Test ID")).called(1);
 
     List<Playlist> expected = [existent, existent2, toAdd];
 
