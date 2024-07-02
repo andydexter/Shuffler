@@ -77,9 +77,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() async {
-    await GetIt.I<AppDatabase>().close();
-    GetIt.I.reset();
     super.dispose();
+    await GetIt.I<AppDatabase>().close();
   }
 
   // This widget is the root of your application.

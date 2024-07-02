@@ -8,7 +8,6 @@ import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/home_page.dart';
-import 'package:shuffler/main.dart';
 import 'playlist_list_test.mocks.dart';
 
 @GenerateMocks([APIUtils])
@@ -65,7 +64,11 @@ void main() {
     appDB.persistPlaylist(existent);
     appDB.persistPlaylist(existent2);
 
-    await tester.pumpWidget(MyApp(ColorScheme.fromSeed(seedColor: Colors.deepPurple)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyHomePage(),
+      ),
+    );
 
     Playlist toAdd = Playlist(id: -1, name: "Test Playlist", tracks: [], spotifyID: 'Test ID');
 

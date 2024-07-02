@@ -133,7 +133,6 @@ void main() {
   });
 
   tearDown(() async {
-    GetIt.instance.get<AppDatabase>().close();
     GetIt.instance.reset();
   });
 }
