@@ -99,6 +99,47 @@ void main() {
     expect(find.text("Existent Playlist 2"), findsOneWidget);
   });
 
+  testWidgets('Delete 2 playlists, 1 existent and 1 new', (WidgetTester tester) async {
+    Playlist existent = Playlist(id: -1, name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
+    Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
+    appDB.persistPlaylist(existent);
+    appDB.persistPlaylist(existent2);
+    when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
+    when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyHomePage(),
+      ),
+    );
+
+    Playlist toAdd = Playlist(id: -1, name: "Test Playlist", tracks: [], spotifyID: 'Test ID');
+
+    await tester.pumpAndSettle();
+    expect(find.text("Playlists loaded!"), findsOneWidget);
+    await tester.pump((find.byType(SnackBar).evaluate().first.widget as SnackBar).duration);
+    await tester.pumpAndSettle();
+
+    final MyHomePage homePage = tester.firstWidget(find.byType(MyHomePage)) as MyHomePage;
+
+    when(mockAPIUtils.getPlaylist("Test ID")).thenAnswer((_) async => toAdd);
+
+    await HelperMethods.addPlaylist(tester, "Test ID");
+    expect(homePage.playlists, equals([existent, existent2, toAdd]));
+
+    await tester.tap(find.byKey(const Key("deletePlaylist<Existent ID>")));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key("deletePlaylist<Test ID>")));
+
+    await tester.pumpAndSettle();
+    expect(await appDB.getAllPlaylists(), equals([existent2]));
+    expect(homePage.playlists, equals([existent2]));
+
+    expect(find.text("Existent Playlist 1"), findsNothing);
+    expect(find.text("Existent Playlist 2"), findsOneWidget);
+    expect(find.text("Test Playlist"), findsNothing);
+  });
+
   tearDown(() async {
     GetIt.instance.reset();
     appDB.close();

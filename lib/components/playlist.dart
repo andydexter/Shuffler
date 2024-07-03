@@ -27,6 +27,7 @@ class Playlist {
                   style: TextStyle(color: textColor),
                 ),
                 trailing: IconButton(
+                  key: Key('deletePlaylist<$spotifyID>'),
                   color: textColor,
                   icon: const Icon(Icons.delete),
                   onPressed: () => onDelete(),
