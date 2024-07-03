@@ -36,6 +36,10 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  Future<void> deletePlaylist(String spotifyID) async {
+    await (delete(playlistTable)..where((tbl) => tbl.spotifyID.equals(spotifyID))).go();
+  }
+
   @override
   int get schemaVersion => 3;
 

@@ -276,6 +276,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             builder: (context) => Theme(
                                 data: Theme.of(context).copyWith(colorScheme: colorScheme),
                                 child: PlaylistView(playlist: playlists[index])))),
+                    () => appDB
+                        .deletePlaylist(playlists[index].spotifyID)
+                        .then((_) => setState(() => playlists.remove(playlists[index]))),
                     bgColor: colorScheme!.secondary,
                     textColor: colorScheme!.onSecondary),
               ))

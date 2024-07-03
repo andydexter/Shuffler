@@ -13,21 +13,24 @@ class Playlist {
 
   Playlist({required this.name, required this.id, required this.spotifyID, this.imgUrl = '', this.tracks = const []});
 
-  Widget getCard(Function() onClick, {Color bgColor = Colors.white, Color textColor = Colors.black}) {
+  Widget getCard(Function() onClick, Function() onDelete,
+      {Color bgColor = Colors.white, Color textColor = Colors.black}) {
     return Card(
-      color: bgColor,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: ListTile(
-          onTap: onClick,
-          leading: GetIt.I<APIUtils>().getImage(imgUrl),
-          title: Text(
-            name,
-            style: TextStyle(color: textColor),
-          ),
-        ),
-      ),
-    );
+        color: bgColor,
+        child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ListTile(
+                onTap: onClick,
+                leading: GetIt.I<APIUtils>().getImage(imgUrl),
+                title: Text(
+                  name,
+                  style: TextStyle(color: textColor),
+                ),
+                trailing: IconButton(
+                  color: textColor,
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => onDelete(),
+                ))));
   }
 
   List<Track> getShuffledTracks() {
