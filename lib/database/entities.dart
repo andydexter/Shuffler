@@ -36,6 +36,14 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  Future<void> deletePlaylist(String spotifyID) async {
+    await (delete(playlistTable)..where((tbl) => tbl.spotifyID.equals(spotifyID))).go();
+  }
+
+  Future<void> deleteAllPlaylists() async {
+    await delete(playlistTable).go();
+  }
+
   @override
   int get schemaVersion => 3;
 
@@ -44,9 +52,12 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (m) async => await m.createAll(),
       onUpgrade: (m, from, to) async {
-        if (from < 3 && to == 3) {
-          m.database.customStatement('ALTER TABLE playlist ADD PRIMARY KEY (spotifyID)');
-          m.database.customStatement('ALTER TABLE playlist DROP COLUMN imgUrl, name, id');
+        if (from < 2) {
+          m.database.customStatement('DROP TABLE track_table');
+        }
+        if (from < 3) {
+          m.database.customStatement('ALTER TABLE playlist_table ADD PRIMARY KEY (spotifyID)');
+          m.database.customStatement('ALTER TABLE playlist_table DROP COLUMN imgUrl, name, id');
         }
       },
     );

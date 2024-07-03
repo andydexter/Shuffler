@@ -162,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (context) => AlertDialog(
               title: const Text('Reset Authentication?'),
               content: const Text(
-                  'Are you sure you want to reset your Spotify authentication? You will need to re-authenticate. If you are planning to log in to a different user make sure to delete any private playlists first.'),
+                  'Are you sure you want to reset your Spotify authentication? You will need to re-authenticate. If you are planning to log in to a different user make sure to delete any private playlists first. If you want a full reset, nuke the database first.'),
               actions: <Widget>[
                 TextButton(
                   child: const Text('Cancel'),
@@ -179,6 +179,37 @@ class _MyHomePageState extends State<MyHomePage> {
                               canPop: false,
                               child: AlertDialog(
                                 title: Text('Authentication Reset!'),
+                                content: Text('Close and Restart the app for the changes to take effect.'),
+                              ),
+                            ));
+                  },
+                ),
+              ],
+            ));
+  }
+
+  void nukeDatabase() {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('Nuke Database?'),
+              content: const Text('Are you sure you want to delete all playlists? This action cannot be undone.'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: const Text('Nuke'),
+                  onPressed: () {
+                    appDB.deleteAllPlaylists();
+                    Navigator.of(context).pop();
+                    showDialog(
+                        context: context,
+                        builder: (context) => const PopScope(
+                              canPop: false,
+                              child: AlertDialog(
+                                title: Text('Database Nuked!'),
                                 content: Text('Close and Restart the app for the changes to take effect.'),
                               ),
                             ));
@@ -221,6 +252,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Text('Change Theme'),
               ),
               const PopupMenuItem<String>(
+                value: 'Nuke Database',
+                child: Text('Nuke Database'),
+              ),
+              const PopupMenuItem<String>(
                 value: 'Reset Authentication',
                 child: Text('Reset Authentication'),
               ),
@@ -240,6 +275,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 case 'Reset Authentication':
                   resetAuthentication();
                   break;
+                case 'Nuke Database':
+                  nukeDatabase();
+                  break;
               }
             },
           ),
@@ -250,36 +288,24 @@ class _MyHomePageState extends State<MyHomePage> {
           // in the middle of the parent.
           child: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Column(
-            // Column is also a layout widget. It takes a list of children and
-            // arranges them vertically. By default, it sizes itself to fit its
-            // children horizontally, and tries to be as tall as its parent.
-            //
-            // Column has various properties to control how it sizes itself and
-            // how it positions its children. Here we use mainAxisAlignment to
-            // center the children vertically; the main axis here is the vertical
-            // axis because Columns are vertical (the cross axis would be
-            // horizontal).
-            //
-            // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-            // action in the IDE, or press "p" in the console), to see the
-            // wireframe for each widget.
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                  child: ListView.builder(
-                itemCount: playlists.length,
-                itemBuilder: (context, index) => playlists[index].getCard(
-                    () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => Theme(
-                                data: Theme.of(context).copyWith(colorScheme: colorScheme),
-                                child: PlaylistView(playlist: playlists[index])))),
-                    bgColor: colorScheme!.secondary,
-                    textColor: colorScheme!.onSecondary),
-              ))
-            ]),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+          Expanded(
+              child: ListView.builder(
+            itemCount: playlists.length,
+            itemBuilder: (context, index) => playlists[index].getCard(
+                () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => Theme(
+                            data: Theme.of(context).copyWith(colorScheme: colorScheme),
+                            child: PlaylistView(playlist: playlists[index])))),
+                () => appDB
+                    .deletePlaylist(playlists[index].spotifyID)
+                    .then((_) => setState(() => playlists.remove(playlists[index]))),
+                bgColor: colorScheme!.secondary,
+                textColor: colorScheme!.onSecondary),
+          ))
+        ]),
       )),
       floatingActionButton: FloatingActionButton(
         onPressed: _addPlaylist,
