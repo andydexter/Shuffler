@@ -156,6 +156,38 @@ class _MyHomePageState extends State<MyHomePage> {
         ]);
   }
 
+  void resetAuthentication() {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('Reset Authentication?'),
+              content: const Text(
+                  'Are you sure you want to reset your Spotify authentication? You will need to re-authenticate. If you are planning to log in to a different user make sure to delete any private playlists first.'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: const Text('Reset'),
+                  onPressed: () {
+                    APIClient().resetAuthentication();
+                    Navigator.of(context).pop();
+                    showDialog(
+                        context: context,
+                        builder: (context) => const PopScope(
+                              canPop: false,
+                              child: AlertDialog(
+                                title: Text('Authentication Reset!'),
+                                content: Text('Close and Restart the app for the changes to take effect.'),
+                              ),
+                            ));
+                  },
+                ),
+              ],
+            ));
+  }
+
   @override
   Widget build(BuildContext context) {
     colorScheme = colorScheme ?? Theme.of(context).colorScheme;
@@ -189,6 +221,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Text('Change Theme'),
               ),
               const PopupMenuItem<String>(
+                value: 'Reset Authentication',
+                child: Text('Reset Authentication'),
+              ),
+              const PopupMenuItem<String>(
                 value: 'About',
                 child: Text('About'),
               ),
@@ -200,6 +236,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   break;
                 case 'About':
                   showAbout();
+                  break;
+                case 'Reset Authentication':
+                  resetAuthentication();
                   break;
               }
             },
