@@ -264,4 +264,9 @@ class APIClient {
 
     return completer.future;
   }
+
+  /// Resets the authentication by deleting the stored credentials.
+  void resetAuthentication() {
+    storage.delete(key: 'credentials');
+  }
 }
