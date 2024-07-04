@@ -59,4 +59,13 @@ class Playlist {
   int get hashCode {
     return name.hashCode ^ spotifyID.hashCode ^ imgUrl.hashCode ^ tracks.hashCode;
   }
+
+  static Playlist fromJson(Map playlist) {
+    return Playlist(
+      id: -1,
+      name: playlist['name'],
+      imgUrl: playlist['images']?[0]['url'] ?? "",
+      spotifyID: playlist['id'],
+    );
+  }
 }

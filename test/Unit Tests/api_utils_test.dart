@@ -117,6 +117,188 @@ void main() {
 
     expect(apiUtils.addTrackToQueue(track), throwsA(equals('Error adding track to queue: Invalid track')));
   });
+
+  test('Should find playlist by title', () async {
+    final playlistsJson = {
+      'items': [
+        {'name': 'Test Playlist 1', 'id': 'test_id_1'},
+        {'name': 'Test Playlist 2', 'id': 'test_id_2'},
+        {'name': 'Test Playlist 3', 'id': 'test_id_3'},
+      ],
+      'next': 'Next Url',
+    };
+    final playlists2Json = {
+      'items': [
+        {'name': 'Test Playlist 4', 'id': 'test_id_4'},
+        {'name': 'Test Playlist 5', 'id': 'test_id_5'},
+      ],
+    };
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/playlists')))
+        .thenAnswer((_) async => Response(jsonEncode(playlistsJson), 200));
+    when(mockClient.get(Uri.parse('Next Url'))).thenAnswer((_) async => Response(jsonEncode(playlists2Json), 200));
+
+    Playlist result = (await apiUtils.getPlaylistByTitle('Test Playlist 4'))!;
+
+    expect(result.spotifyID, equals('test_id_4'));
+    expect(result.name, equals('Test Playlist 4'));
+  });
+
+  test('Should NOT find playlist by title', () async {
+    final playlistsJson = {
+      'items': [
+        {'name': 'Test Playlist 1', 'id': 'test_id_1'},
+        {'name': 'Test Playlist 2', 'id': 'test_id_2'},
+        {'name': 'Test Playlist 3', 'id': 'test_id_3'},
+      ],
+      'next': 'Next Url',
+    };
+    final playlists2Json = {
+      'items': [
+        {'name': 'Test Playlist 4', 'id': 'test_id_4'},
+        {'name': 'Test Playlist 5', 'id': 'test_id_5'},
+      ],
+    };
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/playlists')))
+        .thenAnswer((_) async => Response(jsonEncode(playlistsJson), 200));
+    when(mockClient.get(Uri.parse('Next Url'))).thenAnswer((_) async => Response(jsonEncode(playlists2Json), 200));
+
+    Playlist? result = (await apiUtils.getPlaylistByTitle('Test Playlist 69'));
+
+    expect(result, isNull);
+  });
+
+  test('Should NOT generate playlist', () async {
+    final playlistsJson = {
+      'items': [
+        {'name': 'Test Playlist 1', 'id': 'test_id_1'},
+        {'name': 'Test Playlist 2', 'id': 'test_id_2'},
+        {'name': 'Test Playlist 3', 'id': 'test_id_3'},
+      ],
+      'next': 'Next Url',
+    };
+    final playlists2Json = {
+      'items': [
+        {'name': 'Test Playlist 4', 'id': 'test_id_4'},
+        {'name': apiUtils.generatedPlaylistName("Test"), 'id': 'test_id_5'},
+      ],
+    };
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/playlists')))
+        .thenAnswer((_) async => Response(jsonEncode(playlistsJson), 200));
+    when(mockClient.get(Uri.parse('Next Url'))).thenAnswer((_) async => Response(jsonEncode(playlists2Json), 200));
+
+    Playlist result = await apiUtils.generatePlaylistIfNotExists('Test');
+
+    expect(result, equals(Playlist(name: apiUtils.generatedPlaylistName('Test'), id: -1, spotifyID: 'test_id_5')));
+  });
+
+  test('Should generate playlist', () async {
+    final playlistsJson = {
+      'items': [
+        {'name': 'Test Playlist 1', 'id': 'test_id_1'},
+      ],
+    };
+
+    final generatedJson = {
+      'name': apiUtils.generatedPlaylistName('Test'),
+      'id': 'Test_id',
+    };
+    final generatedPlaylist = Playlist.fromJson(generatedJson);
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/playlists')))
+        .thenAnswer((_) async => Response(jsonEncode(playlistsJson), 200));
+    when(mockClient.post(Uri.parse('https://api.spotify.com/v1/me/playlists'), body: anyNamed('body')))
+        .thenAnswer((invocation) async {
+      if (jsonDecode(invocation.namedArguments[const Symbol('body')])['description'] != apiUtils.genDescription ||
+          jsonDecode(invocation.namedArguments[const Symbol('body')])['public'] != false) {
+        return Response('', 400);
+      }
+      return Response(
+          jsonEncode({
+            'name': jsonDecode(invocation.namedArguments[const Symbol('body')])['name'],
+            'id': 'Test_id',
+          }),
+          200);
+    });
+
+    Playlist result = await apiUtils.generatePlaylistIfNotExists('Test');
+
+    expect(result, equals(generatedPlaylist));
+  });
+
+  test('Should generate playlist name with prefix', () {
+    const originalPlaylistName = 'Test Playlist';
+    const expectedGeneratedName = '[Shufflered] Test Playlist';
+
+    final result = apiUtils.generatedPlaylistName(originalPlaylistName);
+    expect(result, equals(expectedGeneratedName));
+  });
+
+  test('Should add tracks to playlist', () async {
+    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final tracksOG = HelperMethods.generateExpectedTracks(3);
+    final tracksOGJson = HelperMethods.generateTracks(3);
+    final trackOGURIs = {
+      "tracks": tracksOG.map((e) => {"uri": e.uri}).toList()
+    };
+    final tracksNew = HelperMethods.generateExpectedTracks(4, start: 5);
+    final tracksNewUris = {"uris": tracksNew.map((e) => e.uri).toList()};
+
+    final playlistJson = {'name': 'Test Playlist', 'id': 'test_id', 'description': apiUtils.genDescription};
+    //To check generatability
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}')))
+        .thenAnswer((_) async => Response(jsonEncode(playlistJson), 201));
+    //To clear tracks
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
+        .thenAnswer((_) async => Response(jsonEncode(tracksOGJson), 200));
+    when(mockClient.delete(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+            body: anyNamed('body')))
+        .thenAnswer((_) async => Response('', 200));
+    //to add tracks
+    when(mockClient.post(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+            body: anyNamed('body')))
+        .thenAnswer((_) async => Response('', 201));
+
+    await apiUtils.addTracksToGeneratedPlaylist(playlist.spotifyID, tracksNew);
+
+    expect(
+        jsonDecode(verify(mockClient.delete(
+                Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+                body: captureAnyNamed('body')))
+            .captured
+            .first),
+        equals(trackOGURIs));
+    expect(
+        jsonDecode(verify(mockClient.post(
+                Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+                body: captureAnyNamed('body')))
+            .captured
+            .first),
+        equals(tracksNewUris));
+  });
+
+  test('Should play playlist', () async {
+    const playlistID = 'test_playlist_id';
+    const playBody = '{"context_uri": "spotify:playlist:$playlistID", "offset": {"position": 0}}';
+    when(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/play'), body: playBody))
+        .thenAnswer((_) async => Response('', 200));
+    when(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle?state=false')))
+        .thenAnswer((_) async => Response('', 200));
+
+    await apiUtils.playPlaylist(playlistID);
+    verify(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/play'), body: playBody)).called(1);
+    verify(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle?state=false'))).called(1);
+  });
+
+  test('Should handle error when playing playlist', () async {
+    const playlistID = 'test_playlist_id';
+    when(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/play'), body: anyNamed('body')))
+        .thenThrow(const SocketException('No internet connection'));
+
+    expect(apiUtils.playPlaylist(playlistID), throwsA(equals("Couldn't connect to the internet")));
+  });
 }
 
 class HelperMethods {
@@ -138,9 +320,9 @@ class HelperMethods {
     return tracklistJson;
   }
 
-  static List<Track> generateExpectedTracks(int count) {
+  static List<Track> generateExpectedTracks(int count, {int start = 1}) {
     List<Track> expectedTracks = [];
-    for (int i = 1; i <= count; i++) {
+    for (int i = start; i < count + start; i++) {
       expectedTracks.add(Track(
         title: 'Track $i',
         uri: 'track_$i',

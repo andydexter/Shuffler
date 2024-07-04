@@ -3,15 +3,16 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
+import 'dart:async' as _i8;
 
 import 'package:flutter/material.dart' as _i5;
 import 'package:logging/logging.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i7;
 import 'package:oauth2/oauth2.dart' as _i2;
 import 'package:shuffler/api_utils.dart' as _i6;
 import 'package:shuffler/components/playlist.dart' as _i4;
-import 'package:shuffler/components/track.dart' as _i8;
+import 'package:shuffler/components/track.dart' as _i9;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -88,6 +89,15 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i2.Client);
 
   @override
+  set userID(String? _userID) => super.noSuchMethod(
+        Invocation.setter(
+          #userID,
+          _userID,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   _i3.Logger get lg => (super.noSuchMethod(
         Invocation.getter(#lg),
         returnValue: _FakeLogger_1(
@@ -97,40 +107,118 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i3.Logger);
 
   @override
-  _i7.Future<_i4.Playlist> getPlaylist(String? playlistID) =>
+  String get genDescription => (super.noSuchMethod(
+        Invocation.getter(#genDescription),
+        returnValue: _i7.dummyValue<String>(
+          this,
+          Invocation.getter(#genDescription),
+        ),
+      ) as String);
+
+  @override
+  _i8.Future<_i4.Playlist> getPlaylist(String? spotifyID) =>
       (super.noSuchMethod(
         Invocation.method(
           #getPlaylist,
-          [playlistID],
+          [spotifyID],
         ),
-        returnValue: _i7.Future<_i4.Playlist>.value(_FakePlaylist_2(
+        returnValue: _i8.Future<_i4.Playlist>.value(_FakePlaylist_2(
           this,
           Invocation.method(
             #getPlaylist,
-            [playlistID],
+            [spotifyID],
           ),
         )),
-      ) as _i7.Future<_i4.Playlist>);
+      ) as _i8.Future<_i4.Playlist>);
 
   @override
-  _i7.Future<List<_i8.Track>> getTracksForPlaylist(_i4.Playlist? playlist) =>
+  _i8.Future<List<_i9.Track>> getTracksForPlaylist(_i4.Playlist? playlist) =>
       (super.noSuchMethod(
         Invocation.method(
           #getTracksForPlaylist,
           [playlist],
         ),
-        returnValue: _i7.Future<List<_i8.Track>>.value(<_i8.Track>[]),
-      ) as _i7.Future<List<_i8.Track>>);
+        returnValue: _i8.Future<List<_i9.Track>>.value(<_i9.Track>[]),
+      ) as _i8.Future<List<_i9.Track>>);
 
   @override
-  _i7.Future<void> addTrackToQueue(_i8.Track? track) => (super.noSuchMethod(
+  _i8.Future<void> addTrackToQueue(_i9.Track? track) => (super.noSuchMethod(
         Invocation.method(
           #addTrackToQueue,
           [track],
         ),
-        returnValue: _i7.Future<void>.value(),
-        returnValueForMissingStub: _i7.Future<void>.value(),
-      ) as _i7.Future<void>);
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
+
+  @override
+  String generatedPlaylistName(String? originalPlaylistName) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #generatedPlaylistName,
+          [originalPlaylistName],
+        ),
+        returnValue: _i7.dummyValue<String>(
+          this,
+          Invocation.method(
+            #generatedPlaylistName,
+            [originalPlaylistName],
+          ),
+        ),
+      ) as String);
+
+  @override
+  _i8.Future<_i4.Playlist> generatePlaylistIfNotExists(String? title) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #generatePlaylistIfNotExists,
+          [title],
+        ),
+        returnValue: _i8.Future<_i4.Playlist>.value(_FakePlaylist_2(
+          this,
+          Invocation.method(
+            #generatePlaylistIfNotExists,
+            [title],
+          ),
+        )),
+      ) as _i8.Future<_i4.Playlist>);
+
+  @override
+  _i8.Future<_i4.Playlist?> getPlaylistByTitle(String? title) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getPlaylistByTitle,
+          [title],
+        ),
+        returnValue: _i8.Future<_i4.Playlist?>.value(),
+      ) as _i8.Future<_i4.Playlist?>);
+
+  @override
+  _i8.Future<void> addTracksToGeneratedPlaylist(
+    String? spotifyID,
+    List<_i9.Track>? tracks,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #addTracksToGeneratedPlaylist,
+          [
+            spotifyID,
+            tracks,
+          ],
+        ),
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> playPlaylist(String? spotifyID) => (super.noSuchMethod(
+        Invocation.method(
+          #playPlaylist,
+          [spotifyID],
+        ),
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
 
   @override
   _i5.Widget getImage(String? url) => (super.noSuchMethod(
