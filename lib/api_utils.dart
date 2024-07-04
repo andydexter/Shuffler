@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:html_unescape/html_unescape.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -91,6 +93,126 @@ class APIUtils {
     return Future.value();
   }
 
+  Future<Playlist> generatePlaylist(String title) async {
+    Map response;
+    String playlist = '{"name": "$title","description": "$genDescription", "public": false}';
+    try {
+      Response raw = await client.post(Uri.parse('https://api.spotify.com/v1/me/playlists'), body: playlist);
+      response = jsonDecode(raw.body);
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    } catch (e) {
+      lg.severe(e.toString());
+      return Future.error("Error generating playlist: $e");
+    }
+    lg.info("Generated Playlist $title with ID <${response['id']}>");
+    return Playlist.fromJson(response);
+  }
+
+  Future<Playlist> generatePlaylistIfNotExists(String title) async {
+    return (await getPlaylistByTitle(title)) ?? (await generatePlaylist(title));
+  }
+
+  Future<Playlist?> getPlaylistByTitle(String title) async {
+    Map response;
+    String? nextUrl = 'https://api.spotify.com/v1/me/playlists';
+    do {
+      try {
+        response = jsonDecode((await client.get(Uri.parse(nextUrl!))).body);
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      }
+      if (response['items'].any((item) => item['name'] == title)) {
+        Playlist found = Playlist.fromJson(response['items'].where((item) => item['name'] == title).first);
+        lg.info("Playlist $title found with ID <${found.spotifyID}>");
+        return found;
+      }
+      nextUrl = response['next'];
+    } while (nextUrl != null);
+    lg.info("Playlist $title not found");
+    return null;
+  }
+
+  Future<bool> isGeneratedPlaylist(String spotifyID) async {
+    Map playlist;
+    try {
+      playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID'))).body);
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    }
+    String description = HtmlUnescape().convert(playlist['description']);
+    if (description != genDescription && (playlist['name'] as String).startsWith("[Shufflered]")) {
+      lg.warning(
+          "Tried to access <${playlist['name']}> with spotify ID <${playlist['id']}> and description <$description> which has not been shuffler generated");
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> clearPlaylist(String spotifyID) async {
+    if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
+    List<Track> tracks = await getTracksForPlaylist(await getPlaylist(spotifyID));
+    List<String> uris = tracks.map((e) => e.uri).toList();
+    for (int i = 0; i < uris.length; i += 100) {
+      try {
+        String body =
+            '{"tracks": [${uris.sublist(i, min(i + 100, uris.length)).map((e) => '{"uri": "$e"}').join(",")}]}';
+        //lg.info("Using body $body");
+        Response response =
+            await client.delete(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID/tracks'), body: body);
+        if (response.statusCode != 200) {
+          lg.severe("Error clearing playlist: ${jsonDecode(response.body)['error']['message']}");
+          return Future.error("Error clearing playlist: ${jsonDecode(response.body)['error']['message']}");
+        }
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      }
+    }
+    lg.info("Cleared playlist with ID $spotifyID");
+  }
+
+  Future<void> addTracksToGeneratedPlaylist(String spotifyID, List<Track> tracks) async {
+    if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
+    await clearPlaylist(spotifyID);
+    lg.info("Adding ${tracks.length} tracks to playlist with ID $spotifyID");
+    for (int i = 0; i < tracks.length; i += 100) {
+      try {
+        String body =
+            '{"uris": [${tracks.sublist(i, min(i + 100, tracks.length)).map((e) => '"${e.uri}"').join(",")}]}';
+        Response response =
+            await client.post(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID/tracks'), body: body);
+        if (response.statusCode != 201) {
+          return Future.error("Error adding tracks to playlist: ${jsonDecode(response.body)['error']['message']}");
+        }
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      } catch (e) {
+        lg.severe(e.toString());
+        return Future.error("Error adding tracks to playlist: $e");
+      }
+    }
+    lg.info("Added ${tracks.length} tracks to playlist with ID $spotifyID");
+  }
+
+  Future<void> playPlaylist(String spotifyID) async {
+    try {
+      await client.put(Uri.parse('https://api.spotify.com/v1/me/player/play'),
+          body: '{"context_uri": "spotify:playlist:$spotifyID", "offset": {"position": 0}}');
+      await client.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle?state=false'));
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    } catch (e) {
+      lg.severe(e.toString());
+      return Future.error("Error playing playlist: $e");
+    }
+  }
+
   Widget getImage(String url) {
     if (url == '') return const FlutterLogo();
     return Image.network(
@@ -142,7 +264,7 @@ class APIClient {
   /// Throws  if the `APICredentials.json` file is missing.
   /// Asserts that it contains the required `clientId` and `clientSecret` fields.
 
-  Future<oauth2.Client> getClient() async {
+  Future<oauth2.Client> getClient({bool allowRefresh = true}) async {
     //Get API credentials from assets
     String credentialsJson;
     try {
@@ -159,7 +281,7 @@ class APIClient {
     final clientSecret = credentials['clientSecret'];
 
     //Check if refresh token is stored
-    if (await storage.containsKey(key: 'credentials')) {
+    if (allowRefresh && await storage.containsKey(key: 'credentials')) {
       lg.info('Found stored refresh token');
       String? credentialsJson = await storage.read(key: 'credentials');
       var credentials = oauth2.Credentials.fromJson(credentialsJson!);
