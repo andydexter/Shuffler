@@ -25,6 +25,7 @@ class Playlist {
                 title: Text(
                   name,
                   style: TextStyle(color: textColor),
+                  overflow: TextOverflow.fade,
                 ),
                 trailing: IconButton(
                   key: Key('deletePlaylist<$spotifyID>'),
