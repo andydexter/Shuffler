@@ -67,7 +67,8 @@ class _FakeWidget_3 extends _i1.SmartFake implements _i5.Widget {
         );
 
   @override
-  String toString({_i5.DiagnosticLevel? minLevel = _i5.DiagnosticLevel.info}) => super.toString();
+  String toString({_i5.DiagnosticLevel? minLevel = _i5.DiagnosticLevel.info}) =>
+      super.toString();
 }
 
 /// A class which mocks [APIUtils].
@@ -115,7 +116,8 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as String);
 
   @override
-  _i8.Future<_i4.Playlist> getPlaylist(String? spotifyID) => (super.noSuchMethod(
+  _i8.Future<_i4.Playlist> getPlaylist(String? spotifyID) =>
+      (super.noSuchMethod(
         Invocation.method(
           #getPlaylist,
           [spotifyID],
@@ -130,7 +132,8 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<_i4.Playlist>);
 
   @override
-  _i8.Future<List<_i9.Track>> getTracksForPlaylist(_i4.Playlist? playlist) => (super.noSuchMethod(
+  _i8.Future<List<_i9.Track>> getTracksForPlaylist(_i4.Playlist? playlist) =>
+      (super.noSuchMethod(
         Invocation.method(
           #getTracksForPlaylist,
           [playlist],
@@ -149,7 +152,8 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<void>);
 
   @override
-  String generatedPlaylistName(String? originalPlaylistName) => (super.noSuchMethod(
+  String generatedPlaylistName(String? originalPlaylistName) =>
+      (super.noSuchMethod(
         Invocation.method(
           #generatedPlaylistName,
           [originalPlaylistName],
@@ -164,7 +168,8 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as String);
 
   @override
-  _i8.Future<_i4.Playlist> generatePlaylistIfNotExists(String? title) => (super.noSuchMethod(
+  _i8.Future<_i4.Playlist> generatePlaylistIfNotExists(String? title) =>
+      (super.noSuchMethod(
         Invocation.method(
           #generatePlaylistIfNotExists,
           [title],
@@ -179,7 +184,8 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<_i4.Playlist>);
 
   @override
-  _i8.Future<_i4.Playlist?> getPlaylistByTitle(String? title) => (super.noSuchMethod(
+  _i8.Future<_i4.Playlist?> getPlaylistByTitle(String? title) =>
+      (super.noSuchMethod(
         Invocation.method(
           #getPlaylistByTitle,
           [title],
