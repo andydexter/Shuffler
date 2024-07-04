@@ -219,6 +219,27 @@ class _MyHomePageState extends State<MyHomePage> {
             ));
   }
 
+  void deletePlaylist(Playlist playlist) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: Text('Delete ${playlist.name}?'),
+              actions: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: const Text('Delete'),
+                  onPressed: () {
+                    appDB.deletePlaylist(playlist.spotifyID).then((_) => setState(() => playlists.remove(playlist)));
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ));
+  }
+
   @override
   Widget build(BuildContext context) {
     colorScheme = colorScheme ?? Theme.of(context).colorScheme;
@@ -299,9 +320,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         builder: (context) => Theme(
                             data: Theme.of(context).copyWith(colorScheme: colorScheme),
                             child: PlaylistView(playlist: playlists[index])))),
-                () => appDB
-                    .deletePlaylist(playlists[index].spotifyID)
-                    .then((_) => setState(() => playlists.remove(playlists[index]))),
+                () => deletePlaylist(playlists[index]),
                 bgColor: colorScheme!.secondary,
                 textColor: colorScheme!.onSecondary),
           ))

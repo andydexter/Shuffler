@@ -127,11 +127,9 @@ void main() {
     await HelperMethods.addPlaylist(tester, "Test ID");
     expect(homePage.playlists, equals([existent, existent2, toAdd]));
 
-    await tester.tap(find.byKey(const Key("deletePlaylist<Existent ID>")));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key("deletePlaylist<Test ID>")));
+    await HelperMethods.deletePlaylist(tester, "Existent ID");
+    await HelperMethods.deletePlaylist(tester, "Test ID");
 
-    await tester.pumpAndSettle();
     expect(await appDB.getAllPlaylists(), equals([existent2]));
     expect(homePage.playlists, equals([existent2]));
 
@@ -157,6 +155,13 @@ class HelperMethods {
 
     expect(find.text("Playlist Added!"), findsOneWidget);
     await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+  }
+
+  static Future<void> deletePlaylist(WidgetTester tester, String id) async {
+    await tester.tap(find.byKey(Key("deletePlaylist<$id>")));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Delete"));
     await tester.pumpAndSettle();
   }
 }

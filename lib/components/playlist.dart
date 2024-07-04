@@ -25,6 +25,7 @@ class Playlist {
                 title: Text(
                   name,
                   style: TextStyle(color: textColor),
+                  overflow: TextOverflow.fade,
                 ),
                 trailing: IconButton(
                   key: Key('deletePlaylist<$spotifyID>'),
@@ -58,5 +59,14 @@ class Playlist {
   @override
   int get hashCode {
     return name.hashCode ^ spotifyID.hashCode ^ imgUrl.hashCode ^ tracks.hashCode;
+  }
+
+  static Playlist fromJson(Map playlist) {
+    return Playlist(
+      id: -1,
+      name: playlist['name'],
+      imgUrl: playlist['images']?[0]['url'] ?? "",
+      spotifyID: playlist['id'],
+    );
   }
 }
