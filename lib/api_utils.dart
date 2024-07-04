@@ -93,6 +93,8 @@ class APIUtils {
     return Future.value();
   }
 
+  String generatedPlaylistName(String originalPlaylistName) => '[Shufflered] $originalPlaylistName';
+
   Future<Playlist> generatePlaylist(String title) async {
     Map response;
     String playlist = '{"name": "$title","description": "$genDescription", "public": false}';
@@ -111,6 +113,7 @@ class APIUtils {
   }
 
   Future<Playlist> generatePlaylistIfNotExists(String title) async {
+    title = generatedPlaylistName(title);
     return (await getPlaylistByTitle(title)) ?? (await generatePlaylist(title));
   }
 
