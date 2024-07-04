@@ -22,8 +22,6 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   Logger lg = Logger('Shuffler/ShuffleDialog');
   APIUtils apiUtils = GetIt.I<APIUtils>();
 
-  String generatedPlaylistName(String originalPlaylistName) => '[Shufflered] $originalPlaylistName';
-
   Future<void> addTracksToQueue(List<Track> tracks) async {
     final AnimationController controller = AnimationController(vsync: this);
     controller.value = 0.0;
@@ -56,8 +54,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
-    final String toGeneratePlaylistName = generatedPlaylistName(widget.playlist.name);
-    final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(toGeneratePlaylistName);
+    final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(widget.playlist.name);
     await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.spotifyID, tracks);
     await Future.delayed(const Duration(seconds: 2));
     return generatedPlaylist;
