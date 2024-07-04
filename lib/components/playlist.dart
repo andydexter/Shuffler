@@ -64,7 +64,7 @@ class Playlist {
     return Playlist(
       id: -1,
       name: playlist['name'],
-      imgUrl: playlist['images'][0]['url'],
+      imgUrl: playlist['images']?[0]['url'] ?? "",
       spotifyID: playlist['id'],
     );
   }

@@ -55,18 +55,26 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     lg.info('${tracks.length} Tracks added to queue');
   }
 
-  Future<void> addTracksToPlaylist(List<Track> tracks) async {
+  Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
     final String toGeneratePlaylistName = generatedPlaylistName(widget.playlist.name);
     final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(toGeneratePlaylistName);
+    await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.spotifyID, tracks);
+    await Future.delayed(const Duration(seconds: 2));
+    return generatedPlaylist;
+  }
+
+  Future<void> addTracksToPlaylist(List<Track> tracks) async {
     if (context.mounted) {
-      showDialog(
+      await showDialog(
           barrierDismissible: false,
           // ignore: use_build_context_synchronously
           context: context,
           builder: (context) => FutureBuilder(
-              future: apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.spotifyID, tracks),
+              future: generateAndAddToPlaylist(tracks),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.hasError) {
+                  return ErrorDialog(errorMessage: snapshot.error.toString());
+                } else if (snapshot.connectionState == ConnectionState.done) {
                   return AlertDialog(
                     title: const Text('Tracks added to playlist!'),
                     actions: <Widget>[
@@ -76,10 +84,15 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                           Navigator.of(context).pop();
                         },
                       ),
+                      TextButton(
+                        child: const Text('Play'),
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await apiUtils.playPlaylist((snapshot.data as Playlist).spotifyID);
+                        },
+                      ),
                     ],
                   );
-                } else if (snapshot.hasError) {
-                  return ErrorDialog(errorMessage: snapshot.error.toString());
                 }
                 return const PopScope(
                   canPop: false,
@@ -112,29 +125,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
               showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString())));
     }
     if (sliderValue > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
-      await addTracksToPlaylist(widget.playlist.getShuffledTracks().sublist(0, sliderValue.toInt()))
-          .then((_) => showDialog(
-              context: context,
-              builder: (BuildContext context) => AlertDialog(
-                    title: const Text('Tracks added to Playlist!'),
-                    actions: <Widget>[
-                      TextButton(
-                        child: const Text('Close'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      TextButton(
-                        child: const Text('Play'),
-                        onPressed: () {
-                          apiUtils.playGeneratedPlaylist(generatedPlaylistName(widget.playlist.name));
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  )))
-          .catchError((error) =>
-              showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString())));
+      await addTracksToPlaylist(widget.playlist.getShuffledTracks().sublist(0, sliderValue.toInt()));
     }
     if (context.mounted) Navigator.of(context).pop();
   }
