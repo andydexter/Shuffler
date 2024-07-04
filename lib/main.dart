@@ -28,6 +28,11 @@ void main() async {
     GetIt.instance.registerSingleton<APIUtils>(APIUtils(await APIClient().getClient()));
   } catch (e) {
     Logger("Shuffler/main").severe('Error getting OAuth2 client: $e');
+    try {
+      GetIt.I.registerSingleton<APIUtils>(APIUtils(await APIClient().getClient(allowRefresh: false)));
+    } catch (e) {
+      Logger("Shuffler/main").severe('Error getting OAuth client without refresh: $e');
+    }
   }
   GetIt.instance.registerSingleton<PackageInfo>(await PackageInfo.fromPlatform());
   GetIt.instance.registerSingleton<SharedPreferences>(await SharedPreferences.getInstance());
