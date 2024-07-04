@@ -67,8 +67,7 @@ class _FakeWidget_3 extends _i1.SmartFake implements _i5.Widget {
         );
 
   @override
-  String toString({_i5.DiagnosticLevel? minLevel = _i5.DiagnosticLevel.info}) =>
-      super.toString();
+  String toString({_i5.DiagnosticLevel? minLevel = _i5.DiagnosticLevel.info}) => super.toString();
 }
 
 /// A class which mocks [APIUtils].
@@ -116,23 +115,7 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as String);
 
   @override
-  _i8.Future<String> getCurrentUserID() => (super.noSuchMethod(
-        Invocation.method(
-          #getCurrentUserID,
-          [],
-        ),
-        returnValue: _i8.Future<String>.value(_i7.dummyValue<String>(
-          this,
-          Invocation.method(
-            #getCurrentUserID,
-            [],
-          ),
-        )),
-      ) as _i8.Future<String>);
-
-  @override
-  _i8.Future<_i4.Playlist> getPlaylist(String? spotifyID) =>
-      (super.noSuchMethod(
+  _i8.Future<_i4.Playlist> getPlaylist(String? spotifyID) => (super.noSuchMethod(
         Invocation.method(
           #getPlaylist,
           [spotifyID],
@@ -147,8 +130,7 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<_i4.Playlist>);
 
   @override
-  _i8.Future<List<_i9.Track>> getTracksForPlaylist(_i4.Playlist? playlist) =>
-      (super.noSuchMethod(
+  _i8.Future<List<_i9.Track>> getTracksForPlaylist(_i4.Playlist? playlist) => (super.noSuchMethod(
         Invocation.method(
           #getTracksForPlaylist,
           [playlist],
@@ -167,24 +149,22 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<void>);
 
   @override
-  _i8.Future<_i4.Playlist> generatePlaylist(String? title) =>
-      (super.noSuchMethod(
+  String generatedPlaylistName(String? originalPlaylistName) => (super.noSuchMethod(
         Invocation.method(
-          #generatePlaylist,
-          [title],
+          #generatedPlaylistName,
+          [originalPlaylistName],
         ),
-        returnValue: _i8.Future<_i4.Playlist>.value(_FakePlaylist_2(
+        returnValue: _i7.dummyValue<String>(
           this,
           Invocation.method(
-            #generatePlaylist,
-            [title],
+            #generatedPlaylistName,
+            [originalPlaylistName],
           ),
-        )),
-      ) as _i8.Future<_i4.Playlist>);
+        ),
+      ) as String);
 
   @override
-  _i8.Future<_i4.Playlist> generatePlaylistIfNotExists(String? title) =>
-      (super.noSuchMethod(
+  _i8.Future<_i4.Playlist> generatePlaylistIfNotExists(String? title) => (super.noSuchMethod(
         Invocation.method(
           #generatePlaylistIfNotExists,
           [title],
@@ -199,34 +179,13 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<_i4.Playlist>);
 
   @override
-  _i8.Future<_i4.Playlist?> getPlaylistByTitle(String? title) =>
-      (super.noSuchMethod(
+  _i8.Future<_i4.Playlist?> getPlaylistByTitle(String? title) => (super.noSuchMethod(
         Invocation.method(
           #getPlaylistByTitle,
           [title],
         ),
         returnValue: _i8.Future<_i4.Playlist?>.value(),
       ) as _i8.Future<_i4.Playlist?>);
-
-  @override
-  _i8.Future<bool> isGeneratedPlaylist(String? spotifyID) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #isGeneratedPlaylist,
-          [spotifyID],
-        ),
-        returnValue: _i8.Future<bool>.value(false),
-      ) as _i8.Future<bool>);
-
-  @override
-  _i8.Future<void> clearPlaylist(String? spotifyID) => (super.noSuchMethod(
-        Invocation.method(
-          #clearPlaylist,
-          [spotifyID],
-        ),
-        returnValue: _i8.Future<void>.value(),
-        returnValueForMissingStub: _i8.Future<void>.value(),
-      ) as _i8.Future<void>);
 
   @override
   _i8.Future<void> addTracksToGeneratedPlaylist(

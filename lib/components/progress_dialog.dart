@@ -6,8 +6,14 @@ class ProgressDialog extends StatelessWidget {
   final BuildContext context;
   final int upperBound;
 
-  const ProgressDialog(
-      {super.key, required this.message, required this.controller, required this.context, required this.upperBound});
+  ProgressDialog(
+      {super.key, required this.message, required this.controller, required this.context, required this.upperBound}) {
+    controller.addListener(() {
+      if (controller.isDismissed) {
+        pop();
+      }
+    });
+  }
 
   void pop() {
     if (!controller.isDismissed) controller.dispose();
