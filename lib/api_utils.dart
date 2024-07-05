@@ -211,6 +211,22 @@ class APIUtils {
     }
   }
 
+  Future<List<Track>> getRecentlyPlayedTracks(int amount) async {
+    List<Track> tracks = List.empty(growable: true);
+    Map response;
+    Uri nextUrl = Uri.parse('https://api.spotify.com/v1/me/player/recently-played?limit=${min(50, amount)}');
+    try {
+      response = jsonDecode((await client.get(nextUrl)).body);
+      for (var item in response['items']) {
+        tracks.add(Track.fromJson(item));
+      }
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    }
+    return tracks;
+  }
+
   Widget getImage(String url) {
     if (url == '') return const FlutterLogo();
     return Image.network(
@@ -240,7 +256,8 @@ class APIClient {
     'user-modify-playback-state',
     'playlist-modify-private',
     'playlist-modify-public',
-    'playlist-read-private'
+    'playlist-read-private',
+    'user-read-recently-played',
   ];
   final storage = const FlutterSecureStorage();
   Logger lg = Logger("Shuffler/APIClient");
