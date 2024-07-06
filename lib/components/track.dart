@@ -19,8 +19,7 @@ class Track {
   }
 
   static Track fromJson(Map item) {
-    return Track(
-        title: item['track']['name'], uri: item['track']['uri'], imgURL: item['track']['album']['images'][0]['url']);
+    return Track(title: item['name'], uri: item['uri'], imgURL: item['album']['images'][0]['url']);
   }
 
   @override
