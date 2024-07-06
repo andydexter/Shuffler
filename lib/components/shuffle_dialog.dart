@@ -190,6 +190,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                   Row(
                     children: [
                       Slider(
+                          key: const Key("recentTracksSlider"),
                           divisions: 5,
                           value: numOfRecentTracksToRemove,
                           onChanged: getRecentTracksToRemove,
@@ -227,6 +228,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           const SizedBox(height: 20),
           Text('Number of tracks: ${tracksToShuffle.toInt()}'),
           Slider(
+            key: const Key("NumTracksSlider"),
             divisions: maxTracksToShuffle.toInt() - 1,
             value: tracksToShuffle,
             onChanged: (newValue) {

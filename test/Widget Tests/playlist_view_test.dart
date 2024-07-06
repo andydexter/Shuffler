@@ -81,7 +81,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    (find.byType(Slider).evaluate().first.widget as Slider).onChanged!(2.0);
+    (find.byKey(const Key("NumTracksSlider")).evaluate().first.widget as Slider).onChanged!(2.0);
 
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
@@ -108,7 +108,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    (find.byType(Slider).evaluate().first.widget as Slider).onChanged!(3.0);
+    (find.byKey(const Key("NumTracksSlider")).evaluate().first.widget as Slider).onChanged!(3.0);
 
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
@@ -144,7 +144,7 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     (find.byType(Switch).evaluate().first.widget as Switch).onChanged!(true);
-    (find.byType(Slider).evaluate().first.widget as Slider).onChanged!(3.0);
+    (find.byKey(const Key("NumTracksSlider")).evaluate().first.widget as Slider).onChanged!(3.0);
 
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
