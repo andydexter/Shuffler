@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
@@ -17,10 +20,17 @@ class ShuffleDialog extends StatefulWidget {
 }
 
 class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateMixin {
-  double sliderValue = 0.0;
+  double tracksToShuffle = 0.0;
+  double maxTracksToShuffle = 0.0;
   ShuffleType shuffleType = ShuffleType.shuffleIntoQueue;
   Logger lg = Logger('Shuffler/ShuffleDialog');
   APIUtils apiUtils = GetIt.I<APIUtils>();
+
+  Timer? _debounceRecentTracks;
+  bool loadingRecentTracks = false;
+  double numOfRecentTracksToRemove = 0.0;
+  int recentTracksFound = 0;
+  Set<Track> recentTracksToRemove = Set.of(List.empty());
 
   Future<void> addTracksToQueue(List<Track> tracks) async {
     final AnimationController controller = AnimationController(vsync: this);
@@ -103,8 +113,12 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<void> submit(BuildContext context) async {
-    if (sliderValue > 0 && shuffleType == ShuffleType.shuffleIntoQueue) {
-      await addTracksToQueue(widget.playlist.getShuffledTracks().sublist(0, sliderValue.toInt()))
+    List<Track> toShuffle = widget.playlist.getShuffledTracks().sublist(0, tracksToShuffle.toInt())
+      ..removeWhere(
+        (element) => recentTracksToRemove.contains(element),
+      );
+    if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoQueue) {
+      await addTracksToQueue(toShuffle)
           .then((_) => showDialog(
               context: context,
               builder: (BuildContext context) => AlertDialog(
@@ -121,16 +135,42 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           .catchError((error) =>
               showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString())));
     }
-    if (sliderValue > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
-      await addTracksToPlaylist(widget.playlist.getShuffledTracks().sublist(0, sliderValue.toInt()));
+    if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
+      await addTracksToPlaylist(toShuffle);
     }
     if (context.mounted) Navigator.of(context).pop();
   }
 
+  void getRecentTracksToRemove(double value) async {
+    _debounceRecentTracks?.cancel();
+    setState(() => (numOfRecentTracksToRemove = value, loadingRecentTracks = true));
+    _debounceRecentTracks = Timer(const Duration(milliseconds: 800), () async {
+      if (value == 0.0) {
+        recentTracksToRemove.clear();
+      } else {
+        recentTracksToRemove = (await apiUtils.getRecentlyPlayedTracks(numOfRecentTracksToRemove.toInt())).toSet()
+          ..retainWhere((t) => widget.playlist.tracks.contains(t));
+      }
+      setState(() => (
+            recentTracksFound = recentTracksToRemove.length,
+            maxTracksToShuffle = widget.playlist.tracks.length.toDouble() - recentTracksFound,
+            tracksToShuffle = min(tracksToShuffle, maxTracksToShuffle),
+            loadingRecentTracks = false,
+          ));
+    });
+  }
+
   @override
   void initState() {
-    sliderValue = 0.5 * widget.playlist.tracks.length;
+    tracksToShuffle = 0.5 * widget.playlist.tracks.length;
+    maxTracksToShuffle = widget.playlist.tracks.length.toDouble();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _debounceRecentTracks?.cancel();
+    super.dispose();
   }
 
   @override
@@ -140,6 +180,36 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  const Text("Number of recent tracks to search:"),
+                  Row(
+                    children: [
+                      Slider(
+                          divisions: 5,
+                          value: numOfRecentTracksToRemove,
+                          onChanged: getRecentTracksToRemove,
+                          min: 0,
+                          max: 50),
+                      Text(numOfRecentTracksToRemove.toString()),
+                    ],
+                  ),
+                ],
+              ),
+              Stack(alignment: AlignmentDirectional.center, children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [const Text("Found Tracks:"), Text(recentTracksFound.toString())],
+                ),
+                if (loadingRecentTracks) const CircularProgressIndicator(),
+              ])
+            ],
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -155,17 +225,17 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
             ],
           ),
           const SizedBox(height: 20),
-          Text('Number of tracks: ${sliderValue.toInt()}'),
+          Text('Number of tracks: ${tracksToShuffle.toInt()}'),
           Slider(
-            divisions: widget.playlist.tracks.length - 1,
-            value: sliderValue,
+            divisions: maxTracksToShuffle.toInt() - 1,
+            value: tracksToShuffle,
             onChanged: (newValue) {
               setState(() {
-                sliderValue = newValue;
+                tracksToShuffle = newValue;
               });
             },
             min: 0.0,
-            max: widget.playlist.tracks.length.toDouble(),
+            max: maxTracksToShuffle,
           ),
         ],
       ),

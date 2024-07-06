@@ -213,6 +213,7 @@ class APIUtils {
 
   Future<List<Track>> getRecentlyPlayedTracks(int amount) async {
     List<Track> tracks = List.empty(growable: true);
+    if (amount == 0) return tracks;
     Map response;
     Uri nextUrl = Uri.parse('https://api.spotify.com/v1/me/player/recently-played?limit=${min(50, amount)}');
     try {
