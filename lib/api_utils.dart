@@ -60,7 +60,7 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       for (var item in tracklist['items']) {
-        tracks.add(Track.fromJson(item));
+        tracks.add(Track.fromJson(item['track']));
       }
       nextUrl = tracklist['next'];
     } while (nextUrl != null);
@@ -153,6 +153,7 @@ class APIUtils {
   Future<void> _clearPlaylist(String spotifyID) async {
     if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     List<Track> tracks = await getTracksForPlaylist(await getPlaylist(spotifyID));
+    if (tracks.isEmpty) return;
     List<String> uris = tracks.map((e) => e.uri).toList();
     for (int i = 0; i < uris.length; i += 100) {
       try {

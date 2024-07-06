@@ -62,10 +62,11 @@ class Playlist {
   }
 
   static Playlist fromJson(Map playlist) {
+    String imgUrl = ((playlist['images']?.length ?? 0) == 0) ? '' : playlist['images'][0]['url'];
     return Playlist(
       id: -1,
       name: playlist['name'],
-      imgUrl: playlist['images']?[0]['url'] ?? "",
+      imgUrl: imgUrl,
       spotifyID: playlist['id'],
     );
   }
