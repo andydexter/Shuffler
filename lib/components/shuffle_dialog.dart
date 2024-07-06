@@ -145,7 +145,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     _debounceRecentTracks?.cancel();
     setState(() => (numOfRecentTracksToRemove = value, loadingRecentTracks = true));
     _debounceRecentTracks = Timer(const Duration(milliseconds: 800), () async {
-      if (value == 0.0) {
+      if (value.toInt() == 0) {
         recentTracksToRemove.clear();
       } else {
         recentTracksToRemove = (await apiUtils.getRecentlyPlayedTracks(numOfRecentTracksToRemove.toInt())).toSet()
