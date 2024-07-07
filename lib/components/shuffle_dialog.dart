@@ -113,10 +113,11 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<void> submit(BuildContext context) async {
-    List<Track> toShuffle = widget.playlist.getShuffledTracks().sublist(0, tracksToShuffle.toInt())
+    List<Track> toShuffle = widget.playlist.getShuffledTracks()
       ..removeWhere(
         (element) => recentTracksToRemove.contains(element),
       );
+    toShuffle = toShuffle.sublist(0, tracksToShuffle.toInt());
     if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoQueue) {
       await addTracksToQueue(toShuffle)
           .then((_) => showDialog(

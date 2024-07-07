@@ -55,8 +55,8 @@ class _PlaylistViewState extends State<PlaylistView> {
     );
   }
 
-  void _addPlaylistToQueue() {
-    showDialog(
+  void _addPlaylistToQueue() async {
+    await showDialog(
       context: context,
       builder: (context) => ShuffleDialog(playlist: widget.playlist),
     );

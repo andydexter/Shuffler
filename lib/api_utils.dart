@@ -220,7 +220,7 @@ class APIUtils {
     try {
       response = jsonDecode((await client.get(nextUrl)).body);
       for (var item in response['items']) {
-        tracks.add(Track.fromJson(item));
+        tracks.add(Track.fromJson(item['track']));
       }
     } on SocketException catch (_, e) {
       lg.severe(e.toString());

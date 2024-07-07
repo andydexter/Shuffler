@@ -221,6 +221,16 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<void>);
 
   @override
+  _i8.Future<List<_i9.Track>> getRecentlyPlayedTracks(int? amount) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getRecentlyPlayedTracks,
+          [amount],
+        ),
+        returnValue: _i8.Future<List<_i9.Track>>.value(<_i9.Track>[]),
+      ) as _i8.Future<List<_i9.Track>>);
+
+  @override
   _i5.Widget getImage(String? url) => (super.noSuchMethod(
         Invocation.method(
           #getImage,

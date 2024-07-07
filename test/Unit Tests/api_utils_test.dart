@@ -299,6 +299,30 @@ void main() {
 
     expect(apiUtils.playPlaylist(playlistID), throwsA(equals("Couldn't connect to the internet")));
   });
+
+  test('Should get recently played tracks (less than limit)', () async {
+    final tracklistJson = HelperMethods.generateTracks(3);
+    final expectedTracks = HelperMethods.generateExpectedTracks(3);
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/player/recently-played?limit=50')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJson), 200));
+
+    final result = await apiUtils.getRecentlyPlayedTracks(50);
+
+    expect(result, equals(expectedTracks));
+  });
+
+  test('Should get recently played tracks (equal to limit)', () async {
+    final tracklistJson = HelperMethods.generateTracks(30);
+    final expectedTracks = HelperMethods.generateExpectedTracks(30);
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/player/recently-played?limit=30')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJson), 200));
+
+    final result = await apiUtils.getRecentlyPlayedTracks(30);
+
+    expect(result, equals(expectedTracks));
+  });
 }
 
 class HelperMethods {
