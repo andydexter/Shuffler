@@ -84,6 +84,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                 } else if (snapshot.connectionState == ConnectionState.done) {
                   return AlertDialog(
                     title: const Text('Tracks added to playlist!'),
+                    content: const Text('Make sure you\'re already playling something on spotify before clicking play'),
                     actions: <Widget>[
                       TextButton(
                         child: const Text('Close'),
