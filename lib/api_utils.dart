@@ -70,6 +70,8 @@ class APIUtils {
 
   /// Adds a track to the user's Spotify queue.
   ///
+  /// WARNING: The spotify player must be active before calling this method.
+  ///
   /// The [track] parameter represents the track to be added to the queue.
   /// This method sends a POST request to the Spotify API to add the track to the queue.
   /// If the request is successful (status code 204), the method returns a completed Future.
@@ -90,6 +92,15 @@ class APIUtils {
 
   String generatedPlaylistName(String originalPlaylistName) => '[Shufflered] $originalPlaylistName';
 
+  /// Generates a playlist with the given [title].
+  ///
+  /// The playlist is created by making a POST request to the Spotify API
+  /// with the provided [title] and a generated description. The playlist
+  /// is set to be private (public: false).
+  ///
+  /// Returns a [Future] that completes with the generated [Playlist] object.
+  /// If an error occurs during the playlist generation process, an error message
+  /// is returned as a [Future.error].
   Future<Playlist> _generatePlaylist(String title) async {
     Map response;
     String playlist = '{"name": "$title", "description": "$genDescription", "public": false}';
@@ -107,11 +118,34 @@ class APIUtils {
     return Playlist.fromJson(response);
   }
 
+  /// Generates a playlist if it does not already exist.
+  ///
+  /// The [title] parameter specifies the title of the playlist.
+  /// If a playlist with the specified title already exists, it returns that playlist.
+  /// Otherwise, it generates a new playlist with the specified title and returns it.
+  ///
+  /// Returns a [Future] that completes with the generated or existing playlist.
   Future<Playlist> generatePlaylistIfNotExists(String title) async {
     title = generatedPlaylistName(title);
     return (await getPlaylistByTitle(title)) ?? (await _generatePlaylist(title));
   }
 
+  /// Retrieves a playlist by its title.
+  ///
+  /// This method makes an asynchronous HTTP GET request to the Spotify API
+  /// to retrieve the playlist with the specified title. It iterates through
+  /// paginated responses until the playlist is found or all playlists have
+  /// been checked.
+  ///
+  /// If the playlist is found, it is returned as a [Playlist] object.
+  /// If the playlist is not found, `null` is returned.
+  ///
+  /// If there is an error connecting to the internet, a [SocketException] is thrown
+  /// and an error message is returned.
+  ///
+  /// The [title] parameter specifies the title of the playlist to retrieve.
+  ///
+  /// Returns the [Playlist] object if found, `null` otherwise.
   Future<Playlist?> getPlaylistByTitle(String title) async {
     Map response;
     String? nextUrl = 'https://api.spotify.com/v1/me/playlists';
@@ -133,6 +167,14 @@ class APIUtils {
     return null;
   }
 
+  /// Checks if a playlist with the given Spotify ID is a generated playlist.
+  ///
+  /// The [spotifyID] parameter specifies the Spotify ID of the playlist to check.
+  ///
+  /// A generated playlist has a description that matches the [genDescription] constant.
+  ///
+  /// Returns `true` if the playlist is a generated playlist, `false` otherwise.
+  /// Throws an error if there is a problem connecting to the internet.
   Future<bool> _isGeneratedPlaylist(String spotifyID) async {
     Map playlist;
     try {
@@ -150,6 +192,26 @@ class APIUtils {
     return true;
   }
 
+  /// Clears the playlist with the specified Spotify ID.
+  ///
+  /// If the playlist is not a Shuffler-generated playlist, the function returns
+  /// without performing any action.
+  ///
+  /// The function retrieves the tracks for the playlist using the `getTracksForPlaylist`
+  /// and `getPlaylist` functions. If the playlist is empty, the function returns
+  /// without performing any action.
+  ///
+  /// The function then constructs a list of track URIs from the retrieved tracks.
+  /// It deletes the tracks from the playlist in batches of 100 using the Spotify API.
+  /// If an error occurs during the deletion process, the function logs an error message
+  /// and returns a `Future.error` with the error message.
+  ///
+  /// If a `SocketException` occurs during the deletion process, indicating a failure
+  /// to connect to the internet, the function logs an error message and returns
+  /// a `Future.error` with the message "Couldn't connect to the internet".
+  ///
+  /// After successfully clearing the playlist, the function logs an info message
+  /// indicating the playlist ID that was cleared.
   Future<void> _clearPlaylist(String spotifyID) async {
     if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     List<Track> tracks = await getTracksForPlaylist(await getPlaylist(spotifyID));
@@ -171,9 +233,20 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
     }
-    lg.info("Cleared playlist with ID $spotifyID");
+    lg.info("Cleared playlist with ID $spotifyID and ${tracks.length} tracks");
   }
 
+  /// Adds tracks to a generated playlist on Spotify.
+  ///
+  /// The [spotifyID] parameter specifies the ID of the playlist on Spotify.
+  /// The [tracks] parameter is a list of [Track] objects representing the tracks to be added.
+  ///
+  /// Throws an error if the playlist is not a Shuffler-generated playlist,
+  /// if there is an error adding tracks to the playlist,
+  /// if there is a socket exception (indicating a failure to connect to the internet),
+  /// or if there is any other error.
+  ///
+  /// Returns a [Future] that completes when the tracks have been added to the playlist.
   Future<void> addTracksToGeneratedPlaylist(String spotifyID, List<Track> tracks) async {
     if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     await _clearPlaylist(spotifyID);
@@ -198,6 +271,26 @@ class APIUtils {
     lg.info("Added ${tracks.length} tracks to playlist with ID $spotifyID");
   }
 
+  /// Plays a playlist on Spotify.
+  ///
+  /// WARNING: The spotify player must be active before calling this method.
+  ///
+  /// This method plays a playlist on Spotify by sending HTTP requests to the Spotify API.
+  /// It first sends a PUT request to the `/me/player/play` endpoint with the `context_uri`
+  /// parameter set to the Spotify playlist ID and the `offset` parameter set to position 0.
+  /// Then, it sends another PUT request to the `/me/player/shuffle` endpoint with the `state`
+  /// parameter set to `false` to disable shuffling.
+  ///
+  /// If there is a SocketException, it logs the error and returns a Future.error with the message
+  /// "Couldn't connect to the internet". For any other exception, it logs the error and returns
+  /// a Future.error with the message "Error playing playlist: $e".
+  ///
+  /// Parameters:
+  ///   - spotifyID: The ID of the Spotify playlist to play.
+  ///
+  /// Returns:
+  ///   A Future that completes when the playlist is played successfully, or throws an error
+  ///   if there was a problem playing the playlist.
   Future<void> playPlaylist(String spotifyID) async {
     try {
       await client.put(Uri.parse('https://api.spotify.com/v1/me/player/play'),
@@ -212,6 +305,14 @@ class APIUtils {
     }
   }
 
+  /// Retrieves a list of recently played tracks from the Spotify API.
+  ///
+  /// The [amount] parameter specifies the maximum number of tracks to retrieve.
+  /// If [amount] is 0, an empty list is returned.
+  ///
+  /// Returns a [Future] that resolves to a list of [Track] objects representing
+  /// the recently played tracks.
+  /// Throws an error if there is a problem connecting to the internet.
   Future<List<Track>> getRecentlyPlayedTracks(int amount) async {
     List<Track> tracks = List.empty(growable: true);
     if (amount == 0) return tracks;
@@ -229,6 +330,9 @@ class APIUtils {
     return tracks;
   }
 
+  /// Returns a widget that displays an image from the given [url].
+  /// If the [url] is empty, it returns a [FlutterLogo] widget.
+  /// If there is an error loading the image, it also returns a [FlutterLogo] widget.
   Widget getImage(String url) {
     if (url == '') return const FlutterLogo();
     return Image.network(

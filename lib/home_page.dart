@@ -151,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //applicationLegalese: '© 2021 Shuffler',
         children: <Widget>[
           const Text(
-              "Shuffler is an auxiliary app that allows you to freely shuffle your Spotify playlists and add them to your Spotify queue."),
+              "Shuffler is an auxiliary app that allows you to freely shuffle your Spotify playlists and add them to your Spotify queue or into an automatically generated playlist."),
           const Text('This app is not affiliated with Spotify.'),
         ]);
   }

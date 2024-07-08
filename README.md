@@ -1,6 +1,6 @@
 # Shuffler
 
-An auxiliary app that allows you to freely shuffle your Spotify playlists and add them to your Spotify Queue.
+An auxiliary app that allows you to freely shuffle your Spotify playlists and add them to your Spotify Queue or into an automatically generated playlist.
 
 ---
 
@@ -28,8 +28,8 @@ You can generate the documentation by running `dart doc .`
 You can then view the generated dartdoc by opening `/doc/api/index.html` in a browser or by running:
 
 ```bash
-$ dart pub global activate dhttpd
-$ dart pub global run dhttpd --path doc/api
+dart pub global activate dhttpd
+dart pub global run dhttpd --path doc/api
 ```
 
 before opening `localhost:8080` in a browser.

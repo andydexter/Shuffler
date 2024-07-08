@@ -140,7 +140,7 @@ void main() {
 
     Slider numTracks = find.byKey(const Key("NumTracksSlider")).evaluate().first.widget as Slider;
     Slider recentTracksSlider = find.byKey(const Key("recentTracksSlider")).evaluate().first.widget as Slider;
-    expect(find.text("0"), findsOneWidget);
+    expect(find.text("0"), findsExactly(2));
     numTracks.onChanged!(3.0);
     recentTracksSlider.onChanged!(20);
 
