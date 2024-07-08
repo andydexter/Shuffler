@@ -177,31 +177,43 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select number of tracks to add to queue'),
+      title: const Text(
+        'Shuffle Playlist',
+        textAlign: TextAlign.center,
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Column(
-                children: [
-                  const Text("Number of recent tracks to search:"),
-                  Row(
-                    children: [
-                      Slider(
-                          key: const Key("recentTracksSlider"),
-                          divisions: 5,
-                          value: numOfRecentTracksToRemove,
-                          onChanged: getRecentTracksToRemove,
-                          min: 0,
-                          max: 50),
-                      Text(numOfRecentTracksToRemove.toString()),
-                    ],
-                  ),
-                ],
+              Flexible(
+                child: Column(
+                  children: [
+                    const Text(
+                      "Number of recent tracks to search:",
+                      textAlign: TextAlign.center,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Slider(
+                              key: const Key("recentTracksSlider"),
+                              divisions: 5,
+                              value: numOfRecentTracksToRemove,
+                              onChanged: getRecentTracksToRemove,
+                              min: 0,
+                              max: 50),
+                        ),
+                        Text(numOfRecentTracksToRemove.toInt().toString()),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 20),
               Stack(alignment: AlignmentDirectional.center, children: [
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -212,19 +224,30 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
               ])
             ],
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('Shuffle into queue'),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Switch(
-                    value: shuffleType == ShuffleType.shuffleIntoPlaylist,
-                    onChanged: (value) => setState(
-                        () => shuffleType = value ? ShuffleType.shuffleIntoPlaylist : ShuffleType.shuffleIntoQueue)),
-              ),
-              const Text('Shuffle into playlist'),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                    child: Text(
+                  'Shuffle into queue',
+                  textAlign: TextAlign.center,
+                )),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Switch(
+                      value: shuffleType == ShuffleType.shuffleIntoPlaylist,
+                      onChanged: (value) => setState(
+                          () => shuffleType = value ? ShuffleType.shuffleIntoPlaylist : ShuffleType.shuffleIntoQueue)),
+                ),
+                const Expanded(
+                    child: Text(
+                  'Shuffle into playlist',
+                  textAlign: TextAlign.center,
+                )),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           Text('Number of tracks: ${tracksToShuffle.toInt()}'),
