@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/components/add_playlist_dialog.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/home_page.dart';
@@ -148,12 +149,13 @@ class HelperMethods {
   static Future<void> addPlaylist(WidgetTester tester, String toAdd) async {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    expect(find.text("Enter Playlist URL or ID"), findsOneWidget);
+    expect(find.byType(AddPlaylistDialog), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
     await tester.enterText(find.byType(TextField), toAdd);
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Playlist Added!"), findsOneWidget);
+    expect(find.text("Playlist(s) Added!"), findsOneWidget);
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
   }
