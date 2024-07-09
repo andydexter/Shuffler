@@ -5,6 +5,7 @@ import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/components/theme_dialog.dart';
+import 'package:shuffler/components/add_playlist_dialog.dart';
 import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/main.dart';
 import 'package:shuffler/playlist_view.dart';
@@ -71,40 +72,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addPlaylist() {
-    final TextEditingController controller = TextEditingController();
+    final List<String> ids = List.empty(growable: true);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Enter Playlist URL or ID'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: "URL or ID"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                controller.clear();
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Submit'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
+        return AddPlaylistDialog(idList: ids);
       },
     ).then((_) => {
-          if (controller.text.isNotEmpty)
+          for (String id in ids)
             {
-              lg.info("Adding Playlist with input: ", controller.text),
+              lg.info("Adding Playlist with ID: ", id),
               apiUtils
-                  .getPlaylist(controller.text.split('/').last.split('?').first)
+                  .getPlaylist(id)
                   .then((playlist) => {
                         appDB.persistPlaylist(playlist),
                         setState(() {
@@ -113,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         showGeneralDialog(
                             context: context,
                             pageBuilder: (context, anim1, anim2) =>
-                                AlertDialog(title: const Text('Playlist Added!'), actions: <Widget>[
+                                AlertDialog(title: const Text('Playlist(s) Added!'), actions: <Widget>[
                                   TextButton(
                                     child: const Text('Close'),
                                     onPressed: () => Navigator.of(context).pop(),
