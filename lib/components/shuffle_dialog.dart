@@ -45,11 +45,10 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     for (int i = 0; i < tracks.length; i++) {
       String error = '';
       await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) {
-        controller.dispose();
+        if (!controller.isDismissed) controller.dispose();
         error = errorMsg;
       });
       if (error.isNotEmpty) {
-        controller.dispose();
         lg.severe("Add Track to queue error: $error");
         return Future.error(error);
       }
@@ -57,9 +56,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
       if (tracks.length > 80) {
         await Future.delayed(const Duration(milliseconds: 400));
       }
-      await controller.animateTo((i + 1) / tracks.length, duration: const Duration(milliseconds: 100));
+      await controller.animateTo((i + 1) / tracks.length, duration: const Duration(milliseconds: 50));
     }
-    controller.dispose();
+    if (!controller.isDismissed) controller.dispose();
     lg.info('${tracks.length} Tracks added to queue');
   }
 

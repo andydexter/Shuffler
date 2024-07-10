@@ -10,36 +10,27 @@ class ProgressDialog extends StatelessWidget {
       {super.key, required this.message, required this.controller, required this.context, required this.upperBound}) {
     controller.addListener(() {
       if (controller.isDismissed) {
-        pop();
+        Navigator.of(context).pop();
       }
     });
-  }
-
-  void pop() {
-    if (!controller.isDismissed) controller.dispose();
-    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(message),
-      content: SizedBox(
-        width: 150,
-        child: AnimatedBuilder(
-          animation: controller,
-          builder: (_, __) => Row(
-            children: [
-              SizedBox(
-                width: 200,
-                child: LinearProgressIndicator(
-                  value: controller.value,
-                ),
+      content: AnimatedBuilder(
+        animation: controller,
+        builder: (_, __) => Row(
+          children: [
+            Expanded(
+              child: LinearProgressIndicator(
+                value: controller.value,
               ),
-              const SizedBox(width: 10),
-              Text('${(controller.value * upperBound).toInt()} / $upperBound'),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            Text('${(controller.value * upperBound).toInt()} / $upperBound'),
+          ],
         ),
       ),
     );
