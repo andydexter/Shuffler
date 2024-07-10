@@ -13,7 +13,7 @@ class Playlist {
 
   Playlist({required this.name, required this.id, required this.spotifyID, this.imgUrl = '', this.tracks = const []});
 
-  Widget getCard(Function() onClick, Function() onDelete,
+  Widget getDisplayCard(Function() onClick, Function() onDelete,
       {Color bgColor = Colors.white, Color textColor = Colors.black}) {
     return Card(
         color: bgColor,
@@ -33,6 +33,25 @@ class Playlist {
                   icon: const Icon(Icons.delete),
                   onPressed: () => onDelete(),
                 ))));
+  }
+
+  Widget getSelectCard(bool value, {Color bgColor = Colors.white, Color textColor = Colors.black}) {
+    return Card(
+        color: bgColor,
+        child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: CheckboxListTile(
+              value: value,
+              onChanged: (bool? newValue) {
+                value = newValue!;
+              },
+              secondary: GetIt.I<APIUtils>().getImage(imgUrl),
+              title: Text(
+                name,
+                style: TextStyle(color: textColor),
+                overflow: TextOverflow.fade,
+              ),
+            )));
   }
 
   List<Track> getShuffledTracks() {

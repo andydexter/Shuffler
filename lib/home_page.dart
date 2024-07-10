@@ -293,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
               child: ListView.builder(
             itemCount: playlists.length,
-            itemBuilder: (context, index) => playlists[index].getCard(
+            itemBuilder: (context, index) => playlists[index].getDisplayCard(
                 () => Navigator.push(
                     context,
                     MaterialPageRoute(

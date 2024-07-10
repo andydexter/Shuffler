@@ -167,6 +167,31 @@ class APIUtils {
     return null;
   }
 
+  /// Retrieves the user's playlists from the Spotify API, excluding shuffler generated playlists.
+  ///
+  /// This method sends a GET request to the Spotify API to retrieve the user's playlists.
+  /// It filters out generated playlists.
+  /// It returns a [List] of [Playlist] objects representing the user's playlists.
+  /// If there is an error connecting to the internet, it throws an exception with an error message.
+  Future<List<Playlist>> getUserPlaylists() async {
+    List<Playlist> playlists = List.empty(growable: true);
+    String? nextUrl = 'https://api.spotify.com/v1/me/playlists';
+    do {
+      Map playlist;
+      try {
+        playlist = jsonDecode((await client.get(Uri.parse(nextUrl!))).body);
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      }
+      for (var item in playlist['items']) {
+        if (!_isGeneratedPlaylistMap(item)) playlists.add(Playlist.fromJson(item));
+      }
+      nextUrl = playlist['next'];
+    } while (nextUrl != null);
+    return playlists;
+  }
+
   /// Checks if a playlist with the given Spotify ID is a generated playlist.
   ///
   /// The [spotifyID] parameter specifies the Spotify ID of the playlist to check.
@@ -184,12 +209,17 @@ class APIUtils {
       return Future.error("Couldn't connect to the internet");
     }
     String description = HtmlUnescape().convert(playlist['description']);
-    if (description != genDescription) {
+    if (!_isGeneratedPlaylistMap(playlist)) {
       lg.warning(
           "Tried to access <${playlist['name']}> with spotify ID <${playlist['id']}> and description <$description> which has not been shuffler generated");
       return false;
     }
     return true;
+  }
+
+  bool _isGeneratedPlaylistMap(Map playlist) {
+    String description = HtmlUnescape().convert(playlist['description']);
+    return description == genDescription;
   }
 
   /// Clears the playlist with the specified Spotify ID.
