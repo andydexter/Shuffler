@@ -84,7 +84,7 @@ class APIUtils {
       lg.severe(e.toString());
       return Future.error("Couldn't connect to the internet");
     }
-    if (response.statusCode != 204) {
+    if (response.statusCode != 200) {
       return Future.error("Error adding track to queue: ${jsonDecode(response.body)['error']['message']}");
     }
     return Future.value();
