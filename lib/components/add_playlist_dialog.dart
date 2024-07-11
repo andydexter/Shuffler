@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/database/entities.dart';
 
 class AddPlaylistDialog extends StatefulWidget {
   const AddPlaylistDialog({
@@ -21,7 +22,9 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
   List<Playlist> selectedPlaylists = List.empty(growable: true);
   List<Playlist> userPlaylists = List.empty(growable: true);
   bool loadingPlaylists = true;
+  bool loadingDatabase = true;
   APIUtils apiUtils = GetIt.I<APIUtils>();
+  AppDatabase appDB = GetIt.I<AppDatabase>();
 
   @override
   void initState() {
@@ -31,6 +34,12 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
       setState(() {
         userPlaylists = playlists;
         loadingPlaylists = false;
+      });
+    });
+    appDB.getAllPlaylists().then((playlists) {
+      setState(() {
+        selectedPlaylists = playlists;
+        loadingDatabase = false;
       });
     });
     super.initState();
@@ -79,7 +88,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
                 controller: _tabController,
                 children: [
                   _AddManually(_controller),
-                  if (loadingPlaylists)
+                  if (loadingPlaylists || loadingDatabase)
                     const Center(child: CircularProgressIndicator())
                   else
                     _ImportFromAccount(userPlaylists: userPlaylists, selectedPlaylists: selectedPlaylists)
@@ -138,8 +147,6 @@ class _ImportFromAccount extends StatefulWidget {
 }
 
 class _ImportFromAccountState extends State<_ImportFromAccount> {
-  final List<Playlist> allUserPlaylists = List.empty(growable: true);
-
   @override
   void initState() {
     super.initState();
@@ -149,8 +156,13 @@ class _ImportFromAccountState extends State<_ImportFromAccount> {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: widget.userPlaylists.length,
-      itemBuilder: (context, index) => widget.userPlaylists[index].getSelectCard(false,
-          textColor: Theme.of(context).colorScheme.onSecondary, bgColor: Theme.of(context).colorScheme.secondary),
+      itemBuilder: (context, index) => widget.userPlaylists[index].getSelectCard(
+          widget.selectedPlaylists.contains(widget.userPlaylists[index]),
+          (v) => (v ?? false)
+              ? setState(() => widget.selectedPlaylists.add(widget.userPlaylists[index]))
+              : setState(() => widget.selectedPlaylists.remove(widget.userPlaylists[index])),
+          textColor: Theme.of(context).colorScheme.onSecondary,
+          bgColor: Theme.of(context).colorScheme.secondary),
     );
   }
 }

@@ -35,16 +35,15 @@ class Playlist {
                 ))));
   }
 
-  Widget getSelectCard(bool value, {Color bgColor = Colors.white, Color textColor = Colors.black}) {
+  Widget getSelectCard(bool value, Function(bool? newValue) onChanged,
+      {Color bgColor = Colors.white, Color textColor = Colors.black}) {
     return Card(
         color: bgColor,
         child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: CheckboxListTile(
               value: value,
-              onChanged: (bool? newValue) {
-                value = newValue!;
-              },
+              onChanged: onChanged,
               secondary: GetIt.I<APIUtils>().getImage(imgUrl),
               title: Text(
                 name,
