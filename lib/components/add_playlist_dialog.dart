@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/database/entities.dart';
@@ -7,10 +8,7 @@ import 'package:shuffler/database/entities.dart';
 class AddPlaylistDialog extends StatefulWidget {
   const AddPlaylistDialog({
     super.key,
-    required this.idList,
   });
-
-  final List<String> idList;
 
   @override
   State<AddPlaylistDialog> createState() => _AddPlaylistDialogState();
@@ -25,10 +23,11 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
   bool loadingDatabase = true;
   APIUtils apiUtils = GetIt.I<APIUtils>();
   AppDatabase appDB = GetIt.I<AppDatabase>();
+  final Logger lg = Logger("Shuffler/AddPlaylistDialog");
 
   @override
   void initState() {
-    _tabController = TabController(vsync: this, length: 2, initialIndex: 1);
+    _tabController = TabController(vsync: this, length: 2, initialIndex: 0);
     _controller = TextEditingController();
     apiUtils.getUserPlaylists().then((playlists) {
       setState(() {
@@ -52,13 +51,25 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
     super.dispose();
   }
 
-  void submit() {
+  void submit() async {
     if (_tabController.index == 0) {
-      widget.idList.add(_controller.text.split('/').last.split('?').first);
+      await appDB.addPlaylist(_controller.text);
     } else {
-      print('Imported playlist from account');
+      List<Playlist> currentPlaylists = await appDB.getAllPlaylists();
+      //Delete unselected playlists
+      for (Playlist toDelete in currentPlaylists.where((playlist) => !selectedPlaylists.contains(playlist))) {
+        lg.info("Deleting playlist ${toDelete.name} <${toDelete.spotifyID}>");
+        await appDB.deletePlaylist(toDelete.spotifyID);
+      }
+      //Add selected playlists
+      for (Playlist toAdd in selectedPlaylists.where((playlist) => !currentPlaylists.contains(playlist))) {
+        lg.info("Adding playlist ${toAdd.name} <${toAdd.spotifyID}>");
+        await appDB.addPlaylist(toAdd.spotifyID);
+      }
     }
-    Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override

@@ -63,8 +63,8 @@ void main() {
       (WidgetTester tester) async {
     Playlist existent = Playlist(id: -1, name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
     Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
-    appDB.persistPlaylist(existent);
-    appDB.persistPlaylist(existent2);
+    appDB.addPlaylist(existent.spotifyID);
+    appDB.addPlaylist(existent2.spotifyID);
     when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
     when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
 
@@ -103,8 +103,8 @@ void main() {
   testWidgets('Delete 2 playlists, 1 existent and 1 new', (WidgetTester tester) async {
     Playlist existent = Playlist(id: -1, name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
     Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
-    appDB.persistPlaylist(existent);
-    appDB.persistPlaylist(existent2);
+    appDB.addPlaylist(existent.spotifyID);
+    appDB.addPlaylist(existent2.spotifyID);
     when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
     when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
 

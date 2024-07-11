@@ -72,39 +72,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addPlaylist() {
-    final List<String> ids = List.empty(growable: true);
-
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
-        return AddPlaylistDialog(idList: ids);
+        return const AddPlaylistDialog();
       },
-    ).then((_) => {
-          for (String id in ids)
-            {
-              lg.info("Adding Playlist with ID: ", id),
-              apiUtils
-                  .getPlaylist(id)
-                  .then((playlist) => {
-                        appDB.persistPlaylist(playlist),
-                        setState(() {
-                          playlists.add(playlist);
-                        }),
-                        showGeneralDialog(
-                            context: context,
-                            pageBuilder: (context, anim1, anim2) =>
-                                AlertDialog(title: const Text('Playlist(s) Added!'), actions: <Widget>[
-                                  TextButton(
-                                    child: const Text('Close'),
-                                    onPressed: () => Navigator.of(context).pop(),
-                                  ),
-                                ]))
-                      })
-                  .onError((error, stack) => {
-                        showErrorDialog(context, error.toString()),
-                      }),
-            }
-        });
+    ).then((_) => loadPlaylists());
   }
 
   void changeTheme() async {

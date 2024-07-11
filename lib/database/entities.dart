@@ -21,18 +21,18 @@ class AppDatabase extends _$AppDatabase {
     return await GetIt.I<APIUtils>().getPlaylist(playlist.spotifyID);
   }
 
-  PlaylistTableCompanion playlistToRow(Playlist playlist) {
-    return PlaylistTableCompanion.insert(spotifyID: playlist.spotifyID);
-  }
-
   Future<List<Playlist>> getAllPlaylists() async {
     List<PlaylistTableData> playlists = await select(playlistTable).get();
     return Future.wait(playlists.map((playlist) => rowToPlaylist(playlist)));
   }
 
-  Future<void> persistPlaylist(Playlist playlist) async {
-    if ((await (select(playlistTable)..where((tbl) => tbl.spotifyID.equals(playlist.spotifyID))).get()).isEmpty) {
-      await into(playlistTable).insert(playlistToRow(playlist));
+  Future<List<String>> getAllPlaylistIDs() async {
+    return (await select(playlistTable).get()).map((playlist) => playlist.spotifyID).toList();
+  }
+
+  Future<void> addPlaylist(String spotifyID) async {
+    if ((await (select(playlistTable)..where((tbl) => tbl.spotifyID.equals(spotifyID))).get()).isEmpty) {
+      await into(playlistTable).insert(PlaylistTableData(spotifyID: spotifyID));
     }
   }
 
