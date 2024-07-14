@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
@@ -41,23 +42,39 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     playlists = widget.playlists;
-    WidgetsBinding.instance.addPostFrameCallback((_) => loadPlaylists());
+    SchedulerBinding.instance.addPostFrameCallback((_) => loadPlaylists());
+  }
+
+  Future<bool> setPlaylistState() async {
+    List<String> ids = await appDB.getAllPlaylistIDs();
+    if (ids != playlists.map((e) => e.spotifyID).toList()) {
+      //Fetch all playlist information and set state
+      await Future.wait(ids.map((e) async => await apiUtils.getPlaylist(e).onError(
+            (error, stackTrace) => Playlist(name: error as String, id: -1, spotifyID: e),
+          ))).then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
+            playlists.clear();
+            playlists.addAll(value);
+          })));
+      return true;
+    }
+    return false;
   }
 
   Future<void> loadPlaylists() {
     showDialog(
         context: context,
         builder: (context) => FutureBuilder(
-            future: appDB.getAllPlaylists(),
+            //Get Playlist IDs from database
+            future: setPlaylistState(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Center(child: Text('Playlists loaded!')),
-                        duration: Duration(seconds: 1),
-                      ));
-                      playlists.addAll(snapshot.data as List<Playlist>);
-                    }));
+                if (snapshot.data as bool) {
+                  WidgetsBinding.instance
+                      .addPostFrameCallback((_) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Center(child: Text('Playlists loaded!')),
+                            duration: Duration(seconds: 1),
+                          )));
+                }
                 Navigator.of(context).pop();
               } else if (snapshot.hasError ||
                   (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
@@ -78,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (BuildContext context) {
         return const AddPlaylistDialog();
       },
-    ).then((_) => loadPlaylists());
+    ).then((_) => SchedulerBinding.instance.addPostFrameCallback((_) => loadPlaylists()));
   }
 
   void changeTheme() async {

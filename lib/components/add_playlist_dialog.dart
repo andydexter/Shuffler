@@ -16,7 +16,7 @@ class AddPlaylistDialog extends StatefulWidget {
 
 class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late TextEditingController _controller;
+  late TextEditingController _manualTextController;
   List<Playlist> selectedPlaylists = List.empty(growable: true);
   List<Playlist> userPlaylists = List.empty(growable: true);
   bool loadingPlaylists = true;
@@ -28,7 +28,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
   @override
   void initState() {
     _tabController = TabController(vsync: this, length: 2, initialIndex: 0);
-    _controller = TextEditingController();
+    _manualTextController = TextEditingController();
     apiUtils.getUserPlaylists().then((playlists) {
       setState(() {
         userPlaylists = playlists;
@@ -46,14 +46,14 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
 
   @override
   void dispose() {
-    _controller.dispose();
+    _manualTextController.dispose();
     _tabController.dispose();
     super.dispose();
   }
 
   void submit() async {
     if (_tabController.index == 0) {
-      await appDB.addPlaylist(_controller.text);
+      await appDB.addPlaylist(_manualTextController.text.split('/').last.split('?').first);
     } else {
       List<Playlist> currentPlaylists = await appDB.getAllPlaylists();
       //Delete unselected playlists
@@ -98,7 +98,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
               body: TabBarView(
                 controller: _tabController,
                 children: [
-                  _AddManually(_controller),
+                  _AddManually(_manualTextController, null),
                   if (loadingPlaylists || loadingDatabase)
                     const Center(child: CircularProgressIndicator())
                   else
@@ -129,7 +129,8 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
 
 class _AddManually extends StatelessWidget {
   final TextEditingController _controller;
-  const _AddManually(this._controller);
+  final String? errorText;
+  const _AddManually(this._controller, this.errorText);
 
   @override
   Widget build(BuildContext context) {
@@ -138,9 +139,10 @@ class _AddManually extends StatelessWidget {
       child: Center(
         child: TextField(
           controller: _controller,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Manually Add Playlist',
             hintText: 'Enter the playlist URL or ID',
+            errorText: errorText,
           ),
         ),
       ),

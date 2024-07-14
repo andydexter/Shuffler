@@ -38,9 +38,17 @@ class APIUtils {
     } on SocketException catch (_, e) {
       lg.severe(e.toString());
       return Future.error("Couldn't connect to the internet");
+    } catch (e) {
+      lg.severe(e.toString());
+      return Future.error("Error getting playlist: $e");
     }
 
-    return Playlist.fromJson(playlist);
+    try {
+      return Playlist.fromJson(playlist);
+    } catch (e) {
+      lg.severe('Error parsing playlist ${playlist['name']} <$spotifyID>: $e');
+      return Future.error(playlist['error']?['message'] ?? "Error parsing playlist");
+    }
   }
 
   /// Retrieves a list of tracks for a given playlist.
