@@ -27,22 +27,23 @@ void main() {
   });
   group('Add Manually', () {
     testWidgets('Add playlist by ID', (WidgetTester tester) async {
-      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: 'Test ID');
-      when(mockAPIUtils.getPlaylist('Test ID')).thenAnswer((_) async => testPlaylist);
+      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      when(mockAPIUtils.isGeneratedPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => false);
 
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
-      await tester.enterText(find.byType(TextField), 'Test ID');
+      await tester.enterText(find.byType(TextField), testPlaylist.spotifyID);
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
+      expect(find.byType(AddPlaylistDialog), findsNothing);
       expect(await appDB.getAllPlaylistIDs(), equals([testPlaylist.spotifyID]));
     });
 
     testWidgets('Add playlist by URL', (WidgetTester tester) async {
-      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: 'Test ID');
-      when(mockAPIUtils.getPlaylist('Test ID')).thenAnswer((_) async => testPlaylist);
+      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      when(mockAPIUtils.isGeneratedPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => false);
 
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
-      await tester.enterText(find.byType(TextField), 'eee.cum.com/somepath/Test ID?somewuerues');
+      await tester.enterText(find.byType(TextField), 'eee.cum.com/somepath/5CYHemD2Q7C02vWSbMuOcM?somewuerues');
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
       expect(await appDB.getAllPlaylistIDs(), equals([testPlaylist.spotifyID]));
@@ -55,14 +56,53 @@ void main() {
       expect(find.text('Please enter a playlist URL/ID'), findsOneWidget);
     });
 
-    testWidgets('Invalid URL', (WidgetTester tester) async {
-      when(mockAPIUtils.getPlaylist('not a url')).thenAnswer((_) => Future.error('Invalid URL/ID'));
-
+    testWidgets('Invalid URL wrong length', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
-      await tester.enterText(find.byType(TextField), 'not a url');
+      await tester.enterText(find.byType(TextField), 'notaurl');
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
-      expect(find.text('Invalid Playlist ID'), findsOneWidget);
+      expect(find.text('Invalid Playlist URL/ID'), findsOneWidget);
+    });
+
+    testWidgets('Invalid URL wrong character set', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.enterText(find.byType(TextField), '5CYHemD2Q7C02vWSbMuO.M');
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Invalid Playlist URL/ID'), findsOneWidget);
+    });
+
+    testWidgets('Already Added', (WidgetTester tester) async {
+      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      when(mockAPIUtils.getPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => testPlaylist);
+      appDB.addPlaylist(testPlaylist.spotifyID);
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.enterText(find.byType(TextField), testPlaylist.spotifyID);
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Playlist already added'), findsOneWidget);
+    });
+
+    testWidgets('Shuffler Playlist', (WidgetTester tester) async {
+      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      when(mockAPIUtils.isGeneratedPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => true);
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.enterText(find.byType(TextField), testPlaylist.spotifyID);
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cannot add Shuffler generated playlists'), findsOneWidget);
+    });
+
+    testWidgets('Playlist not found', (WidgetTester tester) async {
+      when(mockAPIUtils.isGeneratedPlaylist('5CYHemD2Q7C02vWSbMuOcM')).thenThrow(Exception());
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.enterText(find.byType(TextField), '5CYHemD2Q7C02vWSbMuOcM');
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Playlist Not Found'), findsOneWidget);
     });
   });
 

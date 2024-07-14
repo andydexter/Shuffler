@@ -25,6 +25,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
   AppDatabase appDB = GetIt.I<AppDatabase>();
   final Logger lg = Logger("Shuffler/AddPlaylistDialog");
   String? _manualTextFieldError;
+  bool _disableSubmit = false;
 
   @override
   void initState() {
@@ -54,6 +55,13 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
 
   void submit() async {
     if (_tabController.index == 0) {
+      //Clear error and disable submit button
+      setState(() {
+        _manualTextFieldError = null;
+        _disableSubmit = true;
+      });
+      //Re enabling submit button will take effect next time setState is called
+      _disableSubmit = false;
       //Validate Text Field
       if (_manualTextController.text.isEmpty) {
         setState(() {
@@ -63,7 +71,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
       }
       String id = _manualTextController.text.split('/').last.split('?').first;
       //Validate Format
-      if (id.length != 22 || !RegExp(r'[a-zA-Z0-9]').hasMatch(id)) {
+      if (!RegExp(r'^[a-zA-Z0-9]{22}$').hasMatch(id)) {
         setState(() {
           _manualTextFieldError = 'Invalid Playlist URL/ID';
         });
@@ -76,15 +84,21 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
         });
         return;
       }
-      //Validate playlist exists
+      //Validate playlist exists AND is not shuffler generated
       try {
-        await apiUtils.getPlaylist(id);
+        if (await apiUtils.isGeneratedPlaylist(id)) {
+          setState(() {
+            _manualTextFieldError = 'Cannot add Shuffler generated playlists';
+          });
+          return;
+        }
       } catch (e) {
         setState(() {
           _manualTextFieldError = 'Playlist Not Found';
         });
         return;
       }
+      //Add playlist
       await appDB.addPlaylist(id);
     } else {
       List<Playlist> currentPlaylists = await appDB.getAllPlaylists();
@@ -148,7 +162,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
               ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: TextButton(onPressed: submit, child: const Text("Submit")),
+                child: TextButton(onPressed: _disableSubmit ? null : submit, child: const Text("Submit")),
               ),
               const SizedBox(width: 16),
             ],

@@ -208,7 +208,7 @@ class APIUtils {
   ///
   /// Returns `true` if the playlist is a generated playlist, `false` otherwise.
   /// Throws an error if there is a problem connecting to the internet.
-  Future<bool> _isGeneratedPlaylist(String spotifyID) async {
+  Future<bool> isGeneratedPlaylist(String spotifyID) async {
     Map playlist;
     try {
       playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID'))).body);
@@ -225,6 +225,12 @@ class APIUtils {
     return true;
   }
 
+  /// Checks if the given [playlist] is a generated playlist map.
+  ///
+  /// A generated playlist map is identified by comparing the description of the playlist
+  /// with the [genDescription] constant.
+  ///
+  /// Returns `true` if the playlist is a generated playlist map, `false` otherwise.
   bool _isGeneratedPlaylistMap(Map playlist) {
     String description = HtmlUnescape().convert(playlist['description']);
     return description == genDescription;
@@ -251,7 +257,7 @@ class APIUtils {
   /// After successfully clearing the playlist, the function logs an info message
   /// indicating the playlist ID that was cleared.
   Future<void> _clearPlaylist(String spotifyID) async {
-    if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
+    if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     List<Track> tracks = await getTracksForPlaylist(await getPlaylist(spotifyID));
     if (tracks.isEmpty) return;
     List<String> uris = tracks.map((e) => e.uri).toList();
@@ -286,7 +292,7 @@ class APIUtils {
   ///
   /// Returns a [Future] that completes when the tracks have been added to the playlist.
   Future<void> addTracksToGeneratedPlaylist(String spotifyID, List<Track> tracks) async {
-    if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
+    if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     await _clearPlaylist(spotifyID);
     lg.info("Adding ${tracks.length} tracks to playlist with ID $spotifyID");
     for (int i = 0; i < tracks.length; i += 100) {
