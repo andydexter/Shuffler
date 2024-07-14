@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get_it/get_it.dart';
@@ -47,7 +48,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<bool> setPlaylistState() async {
     List<String> ids = await appDB.getAllPlaylistIDs();
-    if (ids != playlists.map((e) => e.spotifyID).toList()) {
+    List<String> currentIDs = playlists.map((e) => e.spotifyID).toList();
+    if (!listEquals(ids, currentIDs)) {
       //Fetch all playlist information and set state
       await Future.wait(ids.map((e) async => await apiUtils.getPlaylist(e).onError(
             (error, stackTrace) => Playlist(name: error as String, id: -1, spotifyID: e),
@@ -68,14 +70,15 @@ class _MyHomePageState extends State<MyHomePage> {
             future: setPlaylistState(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                if (snapshot.data as bool) {
-                  WidgetsBinding.instance
-                      .addPostFrameCallback((_) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Center(child: Text('Playlists loaded!')),
-                            duration: Duration(seconds: 1),
-                          )));
-                }
-                Navigator.of(context).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (snapshot.data as bool) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Center(child: Text('Playlists loaded!')),
+                      duration: Duration(seconds: 1),
+                    ));
+                  }
+                  if (mounted) Navigator.of(context).pop();
+                });
               } else if (snapshot.hasError ||
                   (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
                 return ErrorDialog(errorMessage: snapshot.error.toString());

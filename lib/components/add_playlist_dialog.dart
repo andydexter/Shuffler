@@ -24,6 +24,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
   APIUtils apiUtils = GetIt.I<APIUtils>();
   AppDatabase appDB = GetIt.I<AppDatabase>();
   final Logger lg = Logger("Shuffler/AddPlaylistDialog");
+  String? _manualTextFieldError;
 
   @override
   void initState() {
@@ -53,7 +54,38 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
 
   void submit() async {
     if (_tabController.index == 0) {
-      await appDB.addPlaylist(_manualTextController.text.split('/').last.split('?').first);
+      //Validate Text Field
+      if (_manualTextController.text.isEmpty) {
+        setState(() {
+          _manualTextFieldError = 'Please enter a playlist URL/ID';
+        });
+        return;
+      }
+      String id = _manualTextController.text.split('/').last.split('?').first;
+      //Validate Format
+      if (id.length != 22 || !RegExp(r'[a-zA-Z0-9]').hasMatch(id)) {
+        setState(() {
+          _manualTextFieldError = 'Invalid Playlist URL/ID';
+        });
+        return;
+      }
+      //Validate not already added
+      if ((await appDB.getAllPlaylistIDs()).contains(id)) {
+        setState(() {
+          _manualTextFieldError = 'Playlist already added';
+        });
+        return;
+      }
+      //Validate playlist exists
+      try {
+        await apiUtils.getPlaylist(id);
+      } catch (e) {
+        setState(() {
+          _manualTextFieldError = 'Playlist Not Found';
+        });
+        return;
+      }
+      await appDB.addPlaylist(id);
     } else {
       List<Playlist> currentPlaylists = await appDB.getAllPlaylists();
       //Delete unselected playlists
@@ -98,7 +130,7 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
               body: TabBarView(
                 controller: _tabController,
                 children: [
-                  _AddManually(_manualTextController, null),
+                  _AddManually(_manualTextController, _manualTextFieldError),
                   if (loadingPlaylists || loadingDatabase)
                     const Center(child: CircularProgressIndicator())
                   else
