@@ -316,14 +316,13 @@ class APIUtils {
   }
 
   /// Plays a playlist on Spotify.
+  /// It then disables shuffle and repeat.
   ///
-  /// WARNING: The spotify player must be active before calling this method.
+  /// WARNING: The spotify player must be active before calling this method, or it will result in an error.
   ///
   /// This method plays a playlist on Spotify by sending HTTP requests to the Spotify API.
   /// It first sends a PUT request to the `/me/player/play` endpoint with the `context_uri`
   /// parameter set to the Spotify playlist ID and the `offset` parameter set to position 0.
-  /// Then, it sends another PUT request to the `/me/player/shuffle` endpoint with the `state`
-  /// parameter set to `false` to disable shuffling.
   ///
   /// If there is a SocketException, it logs the error and returns a Future.error with the message
   /// "Couldn't connect to the internet". For any other exception, it logs the error and returns
@@ -340,6 +339,7 @@ class APIUtils {
       await client.put(Uri.parse('https://api.spotify.com/v1/me/player/play'),
           body: '{"context_uri": "spotify:playlist:$spotifyID", "offset": {"position": 0}}');
       await client.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle?state=false'));
+      await client.put(Uri.parse('https://api.spotify.com/v1/me/player/repeat?state=off'));
     } on SocketException catch (_, e) {
       lg.severe(e.toString());
       return Future.error("Couldn't connect to the internet");

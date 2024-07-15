@@ -286,10 +286,14 @@ void main() {
         .thenAnswer((_) async => Response('', 200));
     when(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle?state=false')))
         .thenAnswer((_) async => Response('', 200));
+    when(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/repeat?state=off')))
+        .thenAnswer((_) async => Response('', 200));
 
     await apiUtils.playPlaylist(playlistID);
     verify(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/play'), body: playBody)).called(1);
     verify(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle?state=false'))).called(1);
+    verify(mockClient.put(Uri.parse('https://api.spotify.com/v1/me/player/repeat?state=off'))).called(1);
+    verifyNoMoreInteractions(mockClient);
   });
 
   test('Should handle error when playing playlist', () async {
