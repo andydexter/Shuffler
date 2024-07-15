@@ -26,6 +26,7 @@ void main() {
   });
 
   testWidgets('Should have correct max tracks', (WidgetTester tester) async {
+    when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -38,6 +39,7 @@ void main() {
   });
 
   testWidgets('Add 2 tracks to queue', (WidgetTester tester) async {
+    when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
     when(mockAPIUtils.addTrackToQueue(any)).thenAnswer((_) async => true);
 
     await tester.pumpWidget(
@@ -60,6 +62,7 @@ void main() {
   });
 
   testWidgets('Add 3 tracks to queue', (WidgetTester tester) async {
+    when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
     when(mockAPIUtils.addTrackToQueue(any)).thenAnswer((_) async => true);
 
     await tester.pumpWidget(
@@ -84,6 +87,7 @@ void main() {
 
   testWidgets('Add 3 tracks to playlist', (WidgetTester tester) async {
     Playlist generatedPlaylist = Playlist(name: 'Generated Playlist', id: 2, spotifyID: 'generated_id');
+    when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
     when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name)).thenAnswer((_) async => generatedPlaylist);
     when(mockAPIUtils.addTracksToGeneratedPlaylist('generated_id', playlist.tracks))
         .thenAnswer((_) async => Future.any);
@@ -118,6 +122,7 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(mockAPIUtils.playPlaylist(generatedPlaylist.spotifyID)).called(1);
+    verify(mockAPIUtils.waitForPlayerActivated()).called(1);
     verifyNoMoreInteractions(mockAPIUtils);
   });
 
@@ -129,6 +134,7 @@ void main() {
       const Track(title: 'recent 3', uri: 'recent3'),
     ];
     when(mockAPIUtils.getRecentlyPlayedTracks(20)).thenAnswer((_) async => recentTracks);
+    when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -162,6 +168,36 @@ void main() {
     verify(mockAPIUtils.addTrackToQueue(playlist.tracks[0])).called(1);
     verify(mockAPIUtils.addTrackToQueue(playlist.tracks[1])).called(1);
     verifyNever(mockAPIUtils.addTrackToQueue(any));
+  });
+
+  testWidgets('Should disable submit button when player is inactive', (WidgetTester tester) async {
+    when(mockAPIUtils.waitForPlayerActivated())
+        .thenAnswer((_) async => await Future.delayed(const Duration(seconds: 1)));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShuffleDialog(playlist: playlist),
+        ),
+      ),
+    );
+
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Make sure you\'re already playing something on spotify before clicking Submit'), findsOneWidget);
+    expect(
+        (find.ancestor(of: find.text('Submit'), matching: find.byType(TextButton)).evaluate().single.widget
+                as TextButton)
+            .onPressed,
+        isNull);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Make sure you\'re already playing something on spotify before clicking Submit'), findsNothing);
+    expect(
+        (find.ancestor(of: find.text('Submit'), matching: find.byType(TextButton)).evaluate().single.widget
+                as TextButton)
+            .onPressed,
+        isNotNull);
+    await tester.pumpAndSettle();
   });
 
   tearDown(() {

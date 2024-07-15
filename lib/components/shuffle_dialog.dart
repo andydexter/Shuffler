@@ -314,7 +314,7 @@ class PlayPlaylistDialog extends StatelessWidget {
       content: playerActive
           ? const Text('Do you want to play the playlist now?')
           : const Text(
-              'Make sure you\'re already playing something on spotify before clicking Submit',
+              'Make sure you\'re already playing something on spotify before clicking Play',
               style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
             ),
       actions: <Widget>[
