@@ -58,6 +58,7 @@ dependencies:
   test_api: ^0.7.0
   vm_service: ^14.2.1
   html_unescape: ^2.0.0
+  async: ^2.11.0
 
 
 dev_dependencies:

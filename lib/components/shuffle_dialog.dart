@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-
+import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
@@ -31,6 +31,33 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   double numOfRecentTracksToRemove = 0.0;
   int recentTracksFound = 0;
   Set<Track> recentTracksToRemove = Set.of(List.empty());
+  bool playerActive = false;
+  late CancelableOperation playerActivationFuture;
+
+  @override
+  void initState() {
+    tracksToShuffle = 0.5 * widget.playlist.tracks.length;
+    maxTracksToShuffle = widget.playlist.tracks.length.toDouble();
+    playerActivationFuture = CancelableOperation.fromFuture(apiUtils.waitForPlayerActivated()).then((_) {
+      //waiting for player will have a minimum delay of 2 seconds. This should be enough for the build process to finish
+      if (mounted) {
+        setState(() {
+          playerActive = true;
+        });
+      } else {
+        //If the building process is still going on, we need to make sure the status updates after it is finished.
+        WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => playerActive = true));
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    playerActivationFuture.cancel();
+    _debounceRecentTracks?.cancel();
+    super.dispose();
+  }
 
   Future<void> addTracksToQueue(List<Track> tracks) async {
     final AnimationController controller = AnimationController(vsync: this);
@@ -70,10 +97,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<void> addTracksToPlaylist(List<Track> tracks) async {
-    if (context.mounted) {
+    if (mounted) {
       await showDialog(
           barrierDismissible: false,
-          // ignore: use_build_context_synchronously
           context: context,
           builder: (context) => FutureBuilder(
               future: generateAndAddToPlaylist(tracks),
@@ -81,25 +107,11 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                 if (snapshot.hasError) {
                   return ErrorDialog(errorMessage: snapshot.error.toString());
                 } else if (snapshot.connectionState == ConnectionState.done) {
-                  return AlertDialog(
-                    title: const Text('Tracks added to playlist!'),
-                    content: const Text('Make sure you\'re already playling something on spotify before clicking play'),
-                    actions: <Widget>[
-                      TextButton(
-                        child: const Text('Close'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      TextButton(
-                        child: const Text('Play'),
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await apiUtils.playPlaylist((snapshot.data as Playlist).spotifyID);
-                        },
-                      ),
-                    ],
-                  );
+                  return FutureBuilder(
+                      future: playerActivationFuture.value,
+                      builder: (context, _) {
+                        return PlayPlaylistDialog(playerActive: playerActive, playlist: snapshot.data as Playlist);
+                      });
                 }
                 return const PopScope(
                   canPop: false,
@@ -152,26 +164,15 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
         recentTracksToRemove = (await apiUtils.getRecentlyPlayedTracks(numOfRecentTracksToRemove.toInt())).toSet()
           ..retainWhere((t) => widget.playlist.tracks.contains(t));
       }
-      setState(() => (
-            recentTracksFound = recentTracksToRemove.length,
-            maxTracksToShuffle = widget.playlist.tracks.length.toDouble() - recentTracksFound,
-            tracksToShuffle = min(tracksToShuffle, maxTracksToShuffle),
-            loadingRecentTracks = false,
-          ));
+      if (mounted) {
+        setState(() => (
+              recentTracksFound = recentTracksToRemove.length,
+              maxTracksToShuffle = widget.playlist.tracks.length.toDouble() - recentTracksFound,
+              tracksToShuffle = min(tracksToShuffle, maxTracksToShuffle),
+              loadingRecentTracks = false,
+            ));
+      }
     });
-  }
-
-  @override
-  void initState() {
-    tracksToShuffle = 0.5 * widget.playlist.tracks.length;
-    maxTracksToShuffle = widget.playlist.tracks.length.toDouble();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _debounceRecentTracks?.cancel();
-    super.dispose();
   }
 
   @override
@@ -263,6 +264,17 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
             min: 0.0,
             max: maxTracksToShuffle,
           ),
+          const SizedBox(
+            height: 10,
+          ),
+          if (!playerActive && shuffleType == ShuffleType.shuffleIntoQueue)
+            const Flexible(
+              child: Text(
+                'Make sure you\'re already playing something on spotify before clicking Submit',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+              ),
+            ),
         ],
       ),
       actions: <Widget>[
@@ -273,10 +285,53 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           },
         ),
         TextButton(
+          onPressed: shuffleType == ShuffleType.shuffleIntoQueue && !playerActive
+              ? null
+              : () async {
+                  await submit(context);
+                },
           child: const Text('Submit'),
-          onPressed: () async {
-            await submit(context);
+        ),
+      ],
+    );
+  }
+}
+
+class PlayPlaylistDialog extends StatelessWidget {
+  const PlayPlaylistDialog({
+    super.key,
+    required this.playerActive,
+    required this.playlist,
+  });
+
+  final bool playerActive;
+  final Playlist playlist;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Tracks added to playlist!'),
+      content: playerActive
+          ? const Text('Do you want to play the playlist now?')
+          : const Text(
+              'Make sure you\'re already playing something on spotify before clicking Play',
+              style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+            ),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('Close'),
+          onPressed: () {
+            Navigator.of(context).pop();
           },
+        ),
+        TextButton(
+          onPressed: playerActive
+              ? () async {
+                  Navigator.of(context).pop();
+                  await GetIt.I<APIUtils>().playPlaylist(playlist.spotifyID);
+                }
+              : null,
+          child: const Text('Play'),
         ),
       ],
     );
