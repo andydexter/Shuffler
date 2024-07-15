@@ -1,10 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
 import 'package:shuffler/components/playlist.dart';
 import 'package:shuffler/components/theme_dialog.dart';
+import 'package:shuffler/components/add_playlist_dialog.dart';
 import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/main.dart';
 import 'package:shuffler/playlist_view.dart';
@@ -40,24 +43,42 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     playlists = widget.playlists;
-    WidgetsBinding.instance.addPostFrameCallback((_) => loadPlaylists());
+    SchedulerBinding.instance.addPostFrameCallback((_) => loadPlaylists());
+  }
+
+  Future<bool> setPlaylistState() async {
+    List<String> ids = await appDB.getAllPlaylistIDs();
+    List<String> currentIDs = playlists.map((e) => e.spotifyID).toList();
+    if (!listEquals(ids, currentIDs)) {
+      //Fetch all playlist information and set state
+      await Future.wait(ids.map((e) async => await apiUtils.getPlaylist(e).onError(
+            (error, stackTrace) => Playlist(name: error as String, id: -1, spotifyID: e),
+          ))).then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
+            playlists.clear();
+            playlists.addAll(value);
+          })));
+      return true;
+    }
+    return false;
   }
 
   Future<void> loadPlaylists() {
     showDialog(
         context: context,
         builder: (context) => FutureBuilder(
-            future: appDB.getAllPlaylists(),
+            //Get Playlist IDs from database
+            future: setPlaylistState(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Center(child: Text('Playlists loaded!')),
-                        duration: Duration(seconds: 1),
-                      ));
-                      playlists.addAll(snapshot.data as List<Playlist>);
-                    }));
-                Navigator.of(context).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (snapshot.data as bool) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Center(child: Text('Playlists loaded!')),
+                      duration: Duration(seconds: 1),
+                    ));
+                  }
+                  if (mounted) Navigator.of(context).pop();
+                });
               } else if (snapshot.hasError ||
                   (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
                 return ErrorDialog(errorMessage: snapshot.error.toString());
@@ -71,60 +92,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addPlaylist() {
-    final TextEditingController controller = TextEditingController();
-
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Enter Playlist URL or ID'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: "URL or ID"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                controller.clear();
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Submit'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
+        return const AddPlaylistDialog();
       },
-    ).then((_) => {
-          if (controller.text.isNotEmpty)
-            {
-              lg.info("Adding Playlist with input: ", controller.text),
-              apiUtils
-                  .getPlaylist(controller.text.split('/').last.split('?').first)
-                  .then((playlist) => {
-                        appDB.persistPlaylist(playlist),
-                        setState(() {
-                          playlists.add(playlist);
-                        }),
-                        showGeneralDialog(
-                            context: context,
-                            pageBuilder: (context, anim1, anim2) =>
-                                AlertDialog(title: const Text('Playlist Added!'), actions: <Widget>[
-                                  TextButton(
-                                    child: const Text('Close'),
-                                    onPressed: () => Navigator.of(context).pop(),
-                                  ),
-                                ]))
-                      })
-                  .onError((error, stack) => {
-                        showErrorDialog(context, error.toString()),
-                      }),
-            }
-        });
+    ).then((_) => SchedulerBinding.instance.addPostFrameCallback((_) => loadPlaylists()));
   }
 
   void changeTheme() async {
@@ -313,7 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
               child: ListView.builder(
             itemCount: playlists.length,
-            itemBuilder: (context, index) => playlists[index].getCard(
+            itemBuilder: (context, index) => playlists[index].getDisplayCard(
                 () => Navigator.push(
                     context,
                     MaterialPageRoute(

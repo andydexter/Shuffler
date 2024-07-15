@@ -38,9 +38,17 @@ class APIUtils {
     } on SocketException catch (_, e) {
       lg.severe(e.toString());
       return Future.error("Couldn't connect to the internet");
+    } catch (e) {
+      lg.severe(e.toString());
+      return Future.error("Error getting playlist: $e");
     }
 
-    return Playlist.fromJson(playlist);
+    try {
+      return Playlist.fromJson(playlist);
+    } catch (e) {
+      lg.severe('Error parsing playlist ${playlist['name']} <$spotifyID>: $e');
+      return Future.error(playlist['error']?['message'] ?? "Error parsing playlist");
+    }
   }
 
   /// Retrieves a list of tracks for a given playlist.
@@ -167,6 +175,31 @@ class APIUtils {
     return null;
   }
 
+  /// Retrieves the user's playlists from the Spotify API, excluding shuffler generated playlists.
+  ///
+  /// This method sends a GET request to the Spotify API to retrieve the user's playlists.
+  /// It filters out generated playlists.
+  /// It returns a [List] of [Playlist] objects representing the user's playlists.
+  /// If there is an error connecting to the internet, it throws an exception with an error message.
+  Future<List<Playlist>> getUserPlaylists() async {
+    List<Playlist> playlists = List.empty(growable: true);
+    String? nextUrl = 'https://api.spotify.com/v1/me/playlists';
+    do {
+      Map playlist;
+      try {
+        playlist = jsonDecode((await client.get(Uri.parse(nextUrl!))).body);
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      }
+      for (var item in playlist['items']) {
+        if (!_isGeneratedPlaylistMap(item)) playlists.add(Playlist.fromJson(item));
+      }
+      nextUrl = playlist['next'];
+    } while (nextUrl != null);
+    return playlists;
+  }
+
   /// Checks if a playlist with the given Spotify ID is a generated playlist.
   ///
   /// The [spotifyID] parameter specifies the Spotify ID of the playlist to check.
@@ -175,7 +208,7 @@ class APIUtils {
   ///
   /// Returns `true` if the playlist is a generated playlist, `false` otherwise.
   /// Throws an error if there is a problem connecting to the internet.
-  Future<bool> _isGeneratedPlaylist(String spotifyID) async {
+  Future<bool> isGeneratedPlaylist(String spotifyID) async {
     Map playlist;
     try {
       playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID'))).body);
@@ -184,12 +217,23 @@ class APIUtils {
       return Future.error("Couldn't connect to the internet");
     }
     String description = HtmlUnescape().convert(playlist['description']);
-    if (description != genDescription) {
+    if (!_isGeneratedPlaylistMap(playlist)) {
       lg.warning(
           "Tried to access <${playlist['name']}> with spotify ID <${playlist['id']}> and description <$description> which has not been shuffler generated");
       return false;
     }
     return true;
+  }
+
+  /// Checks if the given [playlist] is a generated playlist map.
+  ///
+  /// A generated playlist map is identified by comparing the description of the playlist
+  /// with the [genDescription] constant.
+  ///
+  /// Returns `true` if the playlist is a generated playlist map, `false` otherwise.
+  bool _isGeneratedPlaylistMap(Map playlist) {
+    String description = HtmlUnescape().convert(playlist['description']);
+    return description == genDescription;
   }
 
   /// Clears the playlist with the specified Spotify ID.
@@ -213,7 +257,7 @@ class APIUtils {
   /// After successfully clearing the playlist, the function logs an info message
   /// indicating the playlist ID that was cleared.
   Future<void> _clearPlaylist(String spotifyID) async {
-    if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
+    if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     List<Track> tracks = await getTracksForPlaylist(await getPlaylist(spotifyID));
     if (tracks.isEmpty) return;
     List<String> uris = tracks.map((e) => e.uri).toList();
@@ -248,7 +292,7 @@ class APIUtils {
   ///
   /// Returns a [Future] that completes when the tracks have been added to the playlist.
   Future<void> addTracksToGeneratedPlaylist(String spotifyID, List<Track> tracks) async {
-    if (!await _isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
+    if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     await _clearPlaylist(spotifyID);
     lg.info("Adding ${tracks.length} tracks to playlist with ID $spotifyID");
     for (int i = 0; i < tracks.length; i += 100) {

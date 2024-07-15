@@ -194,6 +194,25 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as _i8.Future<_i4.Playlist?>);
 
   @override
+  _i8.Future<List<_i4.Playlist>> getUserPlaylists() => (super.noSuchMethod(
+        Invocation.method(
+          #getUserPlaylists,
+          [],
+        ),
+        returnValue: _i8.Future<List<_i4.Playlist>>.value(<_i4.Playlist>[]),
+      ) as _i8.Future<List<_i4.Playlist>>);
+
+  @override
+  _i8.Future<bool> isGeneratedPlaylist(String? spotifyID) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #isGeneratedPlaylist,
+          [spotifyID],
+        ),
+        returnValue: _i8.Future<bool>.value(false),
+      ) as _i8.Future<bool>);
+
+  @override
   _i8.Future<void> addTracksToGeneratedPlaylist(
     String? spotifyID,
     List<_i9.Track>? tracks,
