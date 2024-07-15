@@ -263,4 +263,14 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
           ),
         ),
       ) as _i5.Widget);
+
+  @override
+  _i8.Future<void> waitForPlayerActivated() => (super.noSuchMethod(
+        Invocation.method(
+          #waitForPlayerActivated,
+          [],
+        ),
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
 }

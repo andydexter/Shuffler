@@ -384,6 +384,24 @@ class APIUtils {
       errorBuilder: (context, error, stackTrace) => const FlutterLogo(),
     );
   }
+
+  Future<void> waitForPlayerActivated() async {
+    Response response;
+    int responseStatus = 204;
+    int attempts = 0;
+    lg.info('Started polling playback state');
+    try {
+      do {
+        response = await client.get(Uri.parse('https://api.spotify.com/v1/me/player'));
+        responseStatus = response.statusCode;
+        await Future.delayed(const Duration(seconds: 2));
+        attempts++;
+      } while (responseStatus != 200 && attempts < 60);
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+    }
+    lg.info('Stopped polling playback state after $attempts attempts with a response status of $responseStatus');
+  }
 }
 
 /// The [APIClient] class is responsible for handling the authentication process with the Spotify API.
@@ -403,6 +421,7 @@ class APIClient {
   final authorizationEndpoint = Uri.parse("https://accounts.spotify.com/authorize");
   final tokenEndpoint = Uri.parse("https://accounts.spotify.com/api/token");
   final scopes = [
+    'user-read-playback-state',
     'user-modify-playback-state',
     'playlist-modify-private',
     'playlist-modify-public',
