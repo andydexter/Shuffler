@@ -151,7 +151,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
       await addTracksToPlaylist(toShuffle);
     }
-    if (mounted) Navigator.of(context).pop();
+    if (context.mounted) Navigator.of(context).pop();
   }
 
   void getRecentTracksToRemove(double value) async {
