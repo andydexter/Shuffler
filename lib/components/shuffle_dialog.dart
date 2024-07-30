@@ -61,15 +61,27 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
 
   Future<void> addTracksToQueue(List<Track> tracks) async {
     final AnimationController controller = AnimationController(vsync: this);
+    bool cancel = false;
     controller.value = 0.0;
     controller.stop();
     showDialog(
         barrierDismissible: false,
         context: context,
         builder: (context) => ProgressDialog(
-            message: 'Adding tracks to queue...', controller: controller, context: context, upperBound: tracks.length));
+            message: 'Adding tracks to queue...',
+            controller: controller,
+            context: context,
+            upperBound: tracks.length,
+            onCancel: () => cancel = true));
     lg.info('ProgressDialog shown');
     for (int i = 0; i < tracks.length; i++) {
+      //If aborted by user, dismiss controller and stop.
+      if (cancel) {
+        if (!controller.isDismissed) controller.dispose();
+        lg.info('Cancelled adding tracks to queue');
+        return;
+      }
+      //Add track to queue. If error, dismiss controller and return error.
       String error = '';
       await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) {
         if (!controller.isDismissed) controller.dispose();
