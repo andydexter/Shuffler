@@ -2,23 +2,25 @@
 
 An auxiliary app that allows you to freely shuffle your Spotify playlists and add them to your Spotify Queue or into an automatically generated playlist.
 
+> This app does not work on web at the moment.
 ---
 
 ## Getting Started
 
-> This app is not working on web at the moment.
+Spotify API app credentials are read from the enviroment variables `CLIENT_ID` and `CLIENT_SECRET`. When running or building the app make sure to include these variables with your own API keys by using `--dart-define` or `--dart-define-from-file`.
 
-API app credentials are read from `assets/APICredentials.json`. Before running the app make sure to create this file in the following format;
+The committed VS Code launch and build configurations use `--dart-define-from-file APICredentials.json` where `APICredentials.json` is located in project root.
+
+Example `APICredentials.json`:
 
 ```json
 {
-    "clientId": "YOUR_CLIENT_ID",
-    "clientSecret": "YOUR_CLIENT_SECRET"
+    "CLIENT_ID": "YOUR_CLIENT_ID",
+    "CLIENT_SECRET": "YOUR_CLIENT_SECRET"
 }
 ```
 
-You can then run the app just like any other flutter app
-
+> Note: Some older versions use a similar json file in assets.
 ---
 
 ## Documentation / API reference
