@@ -67,12 +67,15 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     showDialog(
         barrierDismissible: false,
         context: context,
-        builder: (context) => ProgressDialog(
-            message: 'Adding tracks to queue...',
-            controller: controller,
-            context: context,
-            upperBound: tracks.length,
-            onCancel: () => cancel = true));
+        builder: (context) => PopScope(
+              canPop: false,
+              child: ProgressDialog(
+                  message: 'Adding tracks to queue...',
+                  controller: controller,
+                  context: context,
+                  upperBound: tracks.length,
+                  onCancel: () => cancel = true),
+            ));
     lg.info('ProgressDialog shown');
     for (int i = 0; i < tracks.length; i++) {
       //If aborted by user, dismiss controller and stop.
