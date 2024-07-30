@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:html_unescape/html_unescape.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
@@ -434,11 +433,11 @@ class APIClient {
   /// Retrieves an [oauth2.Client] client for making API requests.
   ///
   /// This method uses the [flutter_secure_storage] package to store and retrieve the user's credentials securely, and
-  /// the [rootBundle] class to load the API credentials from the `APICredentials.json` file.
+  /// enviroment variables to fetch the Spotify API keys
   /// It also uses the [launchURL] and [listenForRedirect] methods to handle the OAuth2 authorization process.
   ///
-  /// This method loads the API credentials from the `APICredentials.json` file
-  /// located in the assets directory. It then uses the credentials to authenticate
+  /// This method loads the API credentials from enviroment variables. Make sure the variables `CLIENT_ID` and `CLIENT_SECRET` are set.
+  /// It then uses the credentials to authenticate
   /// and obtain an OAuth2 client. If a refresh token is already stored, it checks
   /// if the credentials are expired and refreshes them if necessary.
   ///
@@ -454,21 +453,10 @@ class APIClient {
   /// Asserts that it contains the required `clientId` and `clientSecret` fields.
 
   Future<oauth2.Client> getClient({bool allowRefresh = true}) async {
-    //Get API credentials from assets
-    String credentialsJson;
-    try {
-      credentialsJson = await rootBundle.loadString('assets/APICredentials.json');
-    } catch (e) {
-      lg.severe('Error loading credentials from assets. Make sure assets/APICredentials.json exists: $e');
-      return Future.error(e);
-    }
-    lg.info('Successfully loaded credentials from assets');
-    final credentials = jsonDecode(credentialsJson);
-    assert(credentials.containsKey('clientId') && credentials.containsKey('clientSecret'),
-        'APICredentials.json must contain clientId and clientSecret fields');
-    final clientId = credentials['clientId'];
-    final clientSecret = credentials['clientSecret'];
-
+    //Get API credentials from enviroment
+    String clientId = const String.fromEnvironment('CLIENT_ID');
+    String clientSecret = const String.fromEnvironment('CLIENT_SECRET');
+    assert(clientId.isNotEmpty && clientSecret.isNotEmpty, 'CLIENT_ID and CLIENT_SECRET must be set in enviroment');
     //Check if refresh token is stored
     if (allowRefresh && await storage.containsKey(key: 'credentials')) {
       lg.info('Found stored refresh token');

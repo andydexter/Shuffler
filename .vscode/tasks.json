@@ -1,0 +1,34 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "flutter",
+			"command": "flutter",
+			"args": [
+				"build",
+				"apk",
+				"--dart-define-from-file",
+				"APICredentials.json",
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"label": "Flutter: Build APK",
+			"detail": ""
+		},
+		{
+			"type": "flutter",
+			"command": "flutter",
+			"args": [
+				"build",
+				"linux",
+				"--dart-define-from-file",
+				"APICredentials.json",
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"label": "Flutter: Build Linux",
+			"detail": ""
+		},
+
+	]
+}
