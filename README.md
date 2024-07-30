@@ -20,7 +20,7 @@ Example `APICredentials.json`:
 }
 ```
 
-> Note: Some older versions use a similar json file in assets.
+> Note: Some older versions use a similar json file in assets. Check the `Client.getClient()` method in [`APIUtils.dart`](lib/api_utils.dart) for more details.
 ---
 
 ## Documentation / API reference
