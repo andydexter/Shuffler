@@ -9,6 +9,7 @@ import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/data_objects/track.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
@@ -28,9 +29,9 @@ class APIUtils {
 
   /// Retrieves a playlist from Spotify API based on the provided playlist ID.
   ///
-  /// Returns a [Future] that completes with a [Playlist] object representing the retrieved playlist, with an `id` of -1.
+  /// Returns a [Future] that completes with a [SpotifyPlaylist] object representing the retrieved playlist, with an `id` of -1.
   /// Throws a (Future) error if there is a problem connecting to the internet.
-  Future<Playlist> getPlaylist(String spotifyID) async {
+  Future<SpotifyPlaylist> getPlaylistBySpotifyID(String spotifyID) async {
     Map playlist;
     try {
       playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID'))).body);
@@ -43,7 +44,7 @@ class APIUtils {
     }
 
     try {
-      return Playlist.fromJson(playlist);
+      return SpotifyPlaylist.fromJson(playlist);
     } catch (e) {
       lg.severe('Error parsing playlist ${playlist['name']} <$spotifyID>: $e');
       return Future.error(playlist['error']?['message'] ?? "Error parsing playlist");
@@ -55,9 +56,9 @@ class APIUtils {
   /// The [playlist] parameter specifies the playlist from which to retrieve the tracks.
   /// Returns a [Future] that completes with a list of [Track] objects.
   /// Throws an error if there is a problem connecting to the internet.
-  Future<List<Track>> getTracksForPlaylist(Playlist playlist) async {
+  Future<List<Track>> getTracksForPlaylist(SpotifyPlaylist playlist) async {
     List<Track> tracks = List.empty(growable: true);
-    String? nextUrl = 'https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks';
+    String? nextUrl = 'https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks';
     do {
       Map tracklist;
       try {
@@ -136,7 +137,7 @@ class APIUtils {
   /// with the provided [title] and a generated description. The playlist
   /// is set to be private (public: false).
   ///
-  /// Returns a [Future] that completes with the generated [Playlist] object.
+  /// Returns a [Future] that completes with the generated [SpotifyPlaylist] object.
   /// If an error occurs during the playlist generation process, an error message
   /// is returned as a [Future.error].
   Future<Playlist> _generatePlaylist(String title) async {
@@ -153,7 +154,7 @@ class APIUtils {
       return Future.error("Error generating playlist: $e");
     }
     lg.info("Generated Playlist $title with ID <${response['id']}>");
-    return Playlist.fromJson(response);
+    return SpotifyPlaylist.fromJson(response);
   }
 
   /// Generates a playlist if it does not already exist.
@@ -175,7 +176,7 @@ class APIUtils {
   /// paginated responses until the playlist is found or all playlists have
   /// been checked.
   ///
-  /// If the playlist is found, it is returned as a [Playlist] object.
+  /// If the playlist is found, it is returned as a [SpotifyPlaylist] object.
   /// If the playlist is not found, `null` is returned.
   ///
   /// If there is an error connecting to the internet, a [SocketException] is thrown
@@ -183,7 +184,7 @@ class APIUtils {
   ///
   /// The [title] parameter specifies the title of the playlist to retrieve.
   ///
-  /// Returns the [Playlist] object if found, `null` otherwise.
+  /// Returns the [SpotifyPlaylist] object if found, `null` otherwise.
   Future<Playlist?> getPlaylistByTitle(String title) async {
     Map response;
     String? nextUrl = 'https://api.spotify.com/v1/me/playlists';
@@ -195,8 +196,9 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       if (response['items'].any((item) => item['name'] == title)) {
-        Playlist found = Playlist.fromJson(response['items'].where((item) => item['name'] == title).first);
-        lg.info("Playlist $title found with ID <${found.spotifyID}>");
+        SpotifyPlaylist found =
+            SpotifyPlaylist.fromJson(response['items'].where((item) => item['name'] == title).first);
+        lg.info("Playlist $title found with ID <${found.playlistID}>");
         return found;
       }
       nextUrl = response['next'];
@@ -209,10 +211,10 @@ class APIUtils {
   ///
   /// This method sends a GET request to the Spotify API to retrieve the user's playlists.
   /// It filters out generated playlists.
-  /// It returns a [List] of [Playlist] objects representing the user's playlists.
+  /// It returns a [List] of [SpotifyPlaylist] objects representing the user's playlists.
   /// If there is an error connecting to the internet, it throws an exception with an error message.
   Future<List<Playlist>> getUserPlaylists() async {
-    List<Playlist> playlists = List.empty(growable: true);
+    List<SpotifyPlaylist> playlists = List.empty(growable: true);
     String? nextUrl = 'https://api.spotify.com/v1/me/playlists';
     do {
       Map playlist;
@@ -223,7 +225,7 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       for (var item in playlist['items']) {
-        if (!_isGeneratedPlaylistMap(item)) playlists.add(Playlist.fromJson(item));
+        if (!_isGeneratedPlaylistMap(item)) playlists.add(SpotifyPlaylist.fromJson(item));
       }
       nextUrl = playlist['next'];
     } while (nextUrl != null);
@@ -288,7 +290,7 @@ class APIUtils {
   /// indicating the playlist ID that was cleared.
   Future<void> _clearPlaylist(String spotifyID) async {
     if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
-    List<Track> tracks = await getTracksForPlaylist(await getPlaylist(spotifyID));
+    List<Track> tracks = await getTracksForPlaylist(await getPlaylistBySpotifyID(spotifyID));
     if (tracks.isEmpty) return;
     List<String> uris = tracks.map((e) => e.uri).toList();
     for (int i = 0; i < uris.length; i += 100) {

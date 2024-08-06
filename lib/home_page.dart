@@ -49,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<bool> setPlaylistState() async {
     List<String> ids = await appDB.getAllPlaylistIDs();
-    List<String> currentIDs = playlists.map((e) => e.spotifyID).toList();
+    List<String> currentIDs = playlists.map((e) => e.playlistID).toList();
     if (!listEquals(ids, currentIDs)) {
       //Fetch all playlist information and set state
       await appDB.getAllPlaylists().then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
@@ -205,7 +205,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 TextButton(
                   child: const Text('Delete'),
                   onPressed: () {
-                    appDB.deletePlaylist(playlist.spotifyID).then((_) => setState(() => playlists.remove(playlist)));
+                    appDB
+                        .deletePlaylistByID(playlist.playlistID)
+                        .then((_) => setState(() => playlists.remove(playlist)));
                     Navigator.of(context).pop();
                   },
                 ),

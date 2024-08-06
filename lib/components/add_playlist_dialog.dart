@@ -102,18 +102,18 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
         return;
       }
       //Add playlist
-      await appDB.addPlaylist(id);
+      await appDB.addPlaylistByID(id);
     } else {
       List<Playlist> currentPlaylists = await appDB.getAllPlaylists();
       //Delete unselected playlists
       for (Playlist toDelete in currentPlaylists.where((playlist) => !selectedPlaylists.contains(playlist))) {
-        lg.info("Deleting playlist ${toDelete.name} <${toDelete.spotifyID}>");
-        await appDB.deletePlaylist(toDelete.spotifyID);
+        lg.info("Deleting playlist <${toDelete.toString()}>");
+        await appDB.deletePlaylistByID(toDelete.playlistID);
       }
       //Add selected playlists
       for (Playlist toAdd in selectedPlaylists.where((playlist) => !currentPlaylists.contains(playlist))) {
-        lg.info("Adding playlist ${toAdd.name} <${toAdd.spotifyID}>");
-        await appDB.addPlaylist(toAdd.spotifyID);
+        lg.info("Adding playlist <${toAdd.toString()}>");
+        await appDB.addPlaylist(toAdd);
       }
     }
     if (mounted) {

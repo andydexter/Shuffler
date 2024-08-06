@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 
 abstract class PlaylistCard extends StatelessWidget {
@@ -30,14 +28,14 @@ class PlaylistDisplayCard extends PlaylistCard {
             padding: const EdgeInsets.all(12.0),
             child: ListTile(
                 onTap: onClick,
-                leading: GetIt.I<APIUtils>().getImage(playlist.imgUrl),
+                leading: playlist.image,
                 title: Text(
                   playlist.name,
                   style: TextStyle(color: textColor),
                   overflow: TextOverflow.fade,
                 ),
                 trailing: IconButton(
-                  key: Key('deletePlaylist<${playlist.spotifyID}>'),
+                  key: Key('deletePlaylist<${playlist.playlistID}>'),
                   color: textColor,
                   icon: const Icon(Icons.delete),
                   onPressed: () => onDelete(),
@@ -66,7 +64,7 @@ class PlaylistSelectCard extends PlaylistCard {
             child: CheckboxListTile(
               value: value,
               onChanged: onChanged,
-              secondary: GetIt.I<APIUtils>().getImage(playlist.imgUrl),
+              secondary: playlist.image,
               title: Text(
                 playlist.name,
                 style: TextStyle(color: textColor),

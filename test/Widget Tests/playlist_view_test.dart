@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/data_objects/track.dart';
 import 'package:shuffler/playlist_view.dart';
 
@@ -13,7 +13,7 @@ import 'playlist_view_test.mocks.dart';
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  Playlist playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id');
+  SpotifyPlaylist playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
   List<Track> tracks = [
     const Track(title: 'Track 1', uri: 'track_1'),
     const Track(title: 'Track 2', uri: 'track_2'),

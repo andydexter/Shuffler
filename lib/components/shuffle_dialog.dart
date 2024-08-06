@@ -106,7 +106,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
 
   Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
     final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(widget.playlist.name);
-    await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.spotifyID, tracks);
+    await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
     await Future.delayed(const Duration(seconds: 2));
     return generatedPlaylist;
   }
@@ -343,7 +343,7 @@ class PlayPlaylistDialog extends StatelessWidget {
           onPressed: playerActive
               ? () async {
                   Navigator.of(context).pop();
-                  await GetIt.I<APIUtils>().playPlaylist(playlist.spotifyID);
+                  await GetIt.I<APIUtils>().playPlaylist(playlist.playlistID);
                 }
               : null,
           child: const Text('Play'),

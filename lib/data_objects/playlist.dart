@@ -1,17 +1,25 @@
-import 'package:get_it/get_it.dart';
-import 'package:shuffler/api_utils.dart';
+import 'package:flutter/material.dart';
 import 'package:shuffler/data_objects/track.dart';
 import 'dart:math';
 
-class Playlist {
+/// Represents an abstract playlist.
+/// This abstract class consists of all the properties needed to *Display* and *Identify* a playlist.
+abstract class Playlist {
   final String name;
   List<Track> tracks;
-  final String imgUrl;
-  final String spotifyID;
   bool tracksLoaded = false;
+  Widget image;
 
-  Playlist({required this.name, required this.spotifyID, this.imgUrl = '', this.tracks = const []});
+  /// The unique identifier for the playlist.
+  /// This can be the spotify ID, or a custom ID depending on the implementation of the playlist.
+  /// This property MUST be overridden by subclasses.
+  /// This and only this property MUST be used to compare playlists.
+  String get playlistID;
 
+  /// Constructs a Playlist object with the given [name], [tracks], and [image].
+  Playlist({required this.name, this.tracks = const [], required this.image});
+
+  /// Returns a list of shuffled tracks.
   List<Track> getShuffledTracks() {
     List<Track> shuffledTracks = [...tracks];
     shuffledTracks.shuffle(Random());
@@ -19,36 +27,31 @@ class Playlist {
     return shuffledTracks;
   }
 
-  @override
-  String toString() {
-    return "<Playlist: $name, $spotifyID, $imgUrl, $tracks>";
-  }
+  /// Loads the tracks for the playlist.
+  /// This method should be overridden by subclasses to load the tracks from the API or similar.
+  /// This method MUST store the fetched tracks in the [tracks] property.
+  /// This method MUST set the [tracksLoaded] property to `true` after the tracks have been loaded.
+  /// This method MUST load the tracks in the same way irrespective of the status of [tracksLoaded].
+  Future<void> loadTracks();
 
+  /// Compares this playlist to another object.
+  /// 2 playlists are considered equal if their [playlistID]s are equal.
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is Playlist) {
-      return spotifyID == other.spotifyID;
+      return playlistID == other.playlistID;
     }
     return false;
   }
 
   @override
   int get hashCode {
-    return name.hashCode ^ spotifyID.hashCode ^ imgUrl.hashCode ^ tracks.hashCode;
+    return playlistID.hashCode;
   }
 
-  factory Playlist.fromJson(Map playlist) {
-    String imgUrl = ((playlist['images']?.length ?? 0) == 0) ? '' : playlist['images'][0]['url'];
-    return Playlist(
-      name: playlist['name'],
-      imgUrl: imgUrl,
-      spotifyID: playlist['id'],
-    );
-  }
-
-  Future<void> loadTracks() async {
-    tracks = await GetIt.I<APIUtils>().getTracksForPlaylist(this);
-    tracksLoaded = true;
+  @override
+  String toString() {
+    return "<Playlist: $name, $playlistID, $tracks>";
   }
 }
