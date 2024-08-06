@@ -75,6 +75,37 @@ class APIUtils {
     return tracks;
   }
 
+  /// Retrieves a list of liked songs from the Spotify API.
+  ///
+  /// This method makes an asynchronous HTTP GET request to the Spotify API
+  /// to fetch the user's liked songs. It paginates through the results
+  /// and returns a [List] of [Track] objects representing the liked songs.
+  ///
+  /// Returns:
+  /// - A [Future] that resolves to a list of [Track] objects representing
+  ///   the user's liked songs.
+  /// - If an error occurs during the HTTP request or if there is a problem
+  ///   connecting to the internet, a [Future.error] is returned with an
+  ///   appropriate error message.
+  Future<List<Track>> getLikedSongs() async {
+    List<Track> tracks = List.empty(growable: true);
+    String? nextUrl = 'https://api.spotify.com/v1/me/tracks?limit=50';
+    do {
+      Map tracklist;
+      try {
+        tracklist = jsonDecode((await client.get(Uri.parse(nextUrl!))).body);
+      } on SocketException catch (_, e) {
+        lg.severe(e.toString());
+        return Future.error("Couldn't connect to the internet");
+      }
+      for (var item in tracklist['items']) {
+        tracks.add(Track.fromJson(item['track']));
+      }
+      nextUrl = tracklist['next'];
+    } while (nextUrl != null);
+    return tracks;
+  }
+
   /// Adds a track to the user's Spotify queue.
   ///
   /// WARNING: The spotify player must be active before calling this method.
