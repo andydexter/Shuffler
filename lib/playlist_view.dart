@@ -3,7 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/components/shuffle_dialog.dart';
 
 class PlaylistView extends StatefulWidget {

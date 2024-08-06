@@ -6,7 +6,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/add_playlist_dialog.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 
 import 'add_playlist_test.mocks.dart';

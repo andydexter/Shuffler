@@ -6,8 +6,8 @@ import 'package:http/http.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
-import 'package:shuffler/components/track.dart';
+import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/track.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 
 import 'api_utils_test.mocks.dart';

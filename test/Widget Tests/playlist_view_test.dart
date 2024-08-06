@@ -4,8 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
-import 'package:shuffler/components/track.dart';
+import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/track.dart';
 import 'package:shuffler/playlist_view.dart';
 
 import 'playlist_view_test.mocks.dart';

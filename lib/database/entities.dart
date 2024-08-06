@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'connect_db.dart' as db_conn;
 part 'entities.g.dart';
 

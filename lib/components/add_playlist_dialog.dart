@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/components/playlist_cards.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 
 class AddPlaylistDialog extends StatefulWidget {
@@ -215,9 +216,10 @@ class _ImportFromAccountState extends State<_ImportFromAccount> {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: widget.userPlaylists.length,
-      itemBuilder: (context, index) => widget.userPlaylists[index].getSelectCard(
-          widget.selectedPlaylists.contains(widget.userPlaylists[index]),
-          (v) => (v ?? false)
+      itemBuilder: (context, index) => PlaylistSelectCard(
+          playlist: widget.userPlaylists[index],
+          value: widget.selectedPlaylists.contains(widget.userPlaylists[index]),
+          onChanged: (v) => (v ?? false)
               ? setState(() => widget.selectedPlaylists.add(widget.userPlaylists[index]))
               : setState(() => widget.selectedPlaylists.remove(widget.userPlaylists[index])),
           textColor: Theme.of(context).colorScheme.onSecondary,

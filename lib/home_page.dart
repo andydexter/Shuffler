@@ -5,7 +5,8 @@ import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/components/playlist_cards.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/components/theme_dialog.dart';
 import 'package:shuffler/components/add_playlist_dialog.dart';
 import 'package:shuffler/database/entities.dart';
@@ -214,6 +215,14 @@ class _MyHomePageState extends State<MyHomePage> {
             ));
   }
 
+  void navigateToPlaylistView(Playlist playlist) {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Theme(
+                data: Theme.of(context).copyWith(colorScheme: colorScheme), child: PlaylistView(playlist: playlist))));
+  }
+
   @override
   Widget build(BuildContext context) {
     colorScheme = colorScheme ?? Theme.of(context).colorScheme;
@@ -279,22 +288,17 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
           child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
           Expanded(
               child: ListView.builder(
             itemCount: playlists.length,
-            itemBuilder: (context, index) => playlists[index].getDisplayCard(
-                () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Theme(
-                            data: Theme.of(context).copyWith(colorScheme: colorScheme),
-                            child: PlaylistView(playlist: playlists[index])))),
-                () => deletePlaylist(playlists[index]),
+            itemBuilder: (context, index) => PlaylistDisplayCard(
+                playlist: playlists[index],
+                //On click, navigate to the playlist view
+                onClick: () => navigateToPlaylistView(playlists[index]),
+                onDelete: () => deletePlaylist(playlists[index]),
                 bgColor: colorScheme!.secondary,
                 textColor: colorScheme!.onSecondary),
           ))
