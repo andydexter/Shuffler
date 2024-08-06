@@ -32,7 +32,6 @@ void main() {
       ],
     };
     final expectedPlaylist = Playlist(
-      id: -1,
       name: 'Test Playlist',
       imgUrl: 'test_image_url',
       spotifyID: 'test_playlist_id',
@@ -56,7 +55,7 @@ void main() {
   });
 
   test('Should retrieve tracks for a playlist', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id');
     final tracklistJson = HelperMethods.generateTracks(3);
     final expectedTracks = HelperMethods.generateExpectedTracks(3);
 
@@ -69,7 +68,7 @@ void main() {
   });
 
   test('Should retrieve tracks for a playlist with pagination', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id');
     final tracklistJsonPage1 = HelperMethods.generateTracks(5);
     tracklistJsonPage1['next'] = 'URL to next page of tracks';
     final tracklistJsonPage2 = HelperMethods.generateTracks(4, start: 6);
@@ -86,7 +85,7 @@ void main() {
   });
 
   test('Should handle error when retrieving tracks for a playlist', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id');
 
     when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
         .thenThrow(const SocketException('No internet connection'));
@@ -191,7 +190,7 @@ void main() {
 
     Playlist result = await apiUtils.generatePlaylistIfNotExists('Test');
 
-    expect(result, equals(Playlist(name: apiUtils.generatedPlaylistName('Test'), id: -1, spotifyID: 'test_id_5')));
+    expect(result, equals(Playlist(name: apiUtils.generatedPlaylistName('Test'), spotifyID: 'test_id_5')));
   });
 
   test('Should generate playlist', () async {
@@ -237,7 +236,7 @@ void main() {
   });
 
   test('Should add tracks to playlist', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id');
     final tracksOG = HelperMethods.generateExpectedTracks(3);
     final tracksOGJson = HelperMethods.generateTracks(3);
     final trackOGURIs = {

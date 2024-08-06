@@ -5,13 +5,12 @@ import 'dart:math';
 
 class Playlist {
   final String name;
-  final int id;
   List<Track> tracks;
   final String imgUrl;
   final String spotifyID;
   bool tracksLoaded = false;
 
-  Playlist({required this.name, required this.id, required this.spotifyID, this.imgUrl = '', this.tracks = const []});
+  Playlist({required this.name, required this.spotifyID, this.imgUrl = '', this.tracks = const []});
 
   List<Track> getShuffledTracks() {
     List<Track> shuffledTracks = [...tracks];
@@ -22,7 +21,7 @@ class Playlist {
 
   @override
   String toString() {
-    return "<Playlist: $name, $id, $spotifyID, $imgUrl, $tracks>";
+    return "<Playlist: $name, $spotifyID, $imgUrl, $tracks>";
   }
 
   @override
@@ -42,7 +41,6 @@ class Playlist {
   static Playlist fromJson(Map playlist) {
     String imgUrl = ((playlist['images']?.length ?? 0) == 0) ? '' : playlist['images'][0]['url'];
     return Playlist(
-      id: -1,
       name: playlist['name'],
       imgUrl: imgUrl,
       spotifyID: playlist['id'],

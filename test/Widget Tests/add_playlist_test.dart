@@ -27,7 +27,7 @@ void main() {
   });
   group('Add Manually', () {
     testWidgets('Add playlist by ID', (WidgetTester tester) async {
-      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      Playlist testPlaylist = Playlist(name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
       when(mockAPIUtils.isGeneratedPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => false);
 
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
@@ -39,7 +39,7 @@ void main() {
     });
 
     testWidgets('Add playlist by URL', (WidgetTester tester) async {
-      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      Playlist testPlaylist = Playlist(name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
       when(mockAPIUtils.isGeneratedPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => false);
 
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
@@ -73,7 +73,7 @@ void main() {
     });
 
     testWidgets('Already Added', (WidgetTester tester) async {
-      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      Playlist testPlaylist = Playlist(name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
       when(mockAPIUtils.getPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => testPlaylist);
       appDB.addPlaylist(testPlaylist.spotifyID);
 
@@ -85,7 +85,7 @@ void main() {
     });
 
     testWidgets('Shuffler Playlist', (WidgetTester tester) async {
-      Playlist testPlaylist = Playlist(id: -1, name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
+      Playlist testPlaylist = Playlist(name: 'My Playlist', tracks: [], spotifyID: '5CYHemD2Q7C02vWSbMuOcM');
       when(mockAPIUtils.isGeneratedPlaylist(testPlaylist.spotifyID)).thenAnswer((_) async => true);
 
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
@@ -108,9 +108,9 @@ void main() {
 
   group('Import from Account', () {
     testWidgets('Add 2', (WidgetTester tester) async {
-      Playlist testPlaylist1 = Playlist(id: -1, name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
-      Playlist testPlaylist2 = Playlist(id: -1, name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
-      Playlist testPlaylist3 = Playlist(id: -1, name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
+      Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
+      Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
+      Playlist testPlaylist3 = Playlist(name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
       userPlaylists = [testPlaylist1, testPlaylist2, testPlaylist3];
       when(mockAPIUtils.getPlaylist('Test ID1')).thenAnswer((_) async => testPlaylist1);
       when(mockAPIUtils.getPlaylist('Test ID2')).thenAnswer((_) async => testPlaylist2);
@@ -131,9 +131,9 @@ void main() {
     });
 
     testWidgets('Delete 1', (WidgetTester tester) async {
-      Playlist testPlaylist1 = Playlist(id: -1, name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
-      Playlist testPlaylist2 = Playlist(id: -1, name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
-      Playlist testPlaylist3 = Playlist(id: -1, name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
+      Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
+      Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
+      Playlist testPlaylist3 = Playlist(name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
       userPlaylists = [testPlaylist1, testPlaylist2, testPlaylist3];
       when(mockAPIUtils.getPlaylist('Test ID1')).thenAnswer((_) async => testPlaylist1);
       when(mockAPIUtils.getPlaylist('Test ID2')).thenAnswer((_) async => testPlaylist2);
@@ -156,9 +156,9 @@ void main() {
     });
 
     testWidgets('2 Existing, Add 1, Delete 1', (WidgetTester tester) async {
-      Playlist testPlaylist1 = Playlist(id: -1, name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
-      Playlist testPlaylist2 = Playlist(id: -1, name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
-      Playlist testPlaylist3 = Playlist(id: -1, name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
+      Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
+      Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
+      Playlist testPlaylist3 = Playlist(name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
       userPlaylists = [testPlaylist1, testPlaylist2, testPlaylist3];
       when(mockAPIUtils.getPlaylist('Test ID1')).thenAnswer((_) async => testPlaylist1);
       when(mockAPIUtils.getPlaylist('Test ID2')).thenAnswer((_) async => testPlaylist2);

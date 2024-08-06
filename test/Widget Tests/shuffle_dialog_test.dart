@@ -13,7 +13,7 @@ import 'shuffle_dialog_test.mocks.dart';
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  Playlist playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id', tracks: [
+  Playlist playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id', tracks: [
     const Track(title: 'Track 1', uri: 'track_1'),
     const Track(title: 'Track 2', uri: 'track_2'),
     const Track(title: 'Track 3', uri: 'track_3'),
@@ -86,7 +86,7 @@ void main() {
   });
 
   testWidgets('Add 3 tracks to playlist', (WidgetTester tester) async {
-    Playlist generatedPlaylist = Playlist(name: 'Generated Playlist', id: 2, spotifyID: 'generated_id');
+    Playlist generatedPlaylist = Playlist(name: 'Generated Playlist', spotifyID: 'generated_id');
     when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
     when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name)).thenAnswer((_) async => generatedPlaylist);
     when(mockAPIUtils.addTracksToGeneratedPlaylist('generated_id', playlist.tracks))

@@ -13,7 +13,7 @@ import 'playlist_view_test.mocks.dart';
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  Playlist playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+  Playlist playlist = Playlist(name: 'Test Playlist', spotifyID: 'test_id');
   List<Track> tracks = [
     const Track(title: 'Track 1', uri: 'track_1'),
     const Track(title: 'Track 2', uri: 'track_2'),
