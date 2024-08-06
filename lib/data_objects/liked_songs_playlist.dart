@@ -27,7 +27,7 @@ class LikedSongsPlaylist extends Playlist {
 
   @override
   bool operator ==(Object other) {
-    return other is LikedSongsPlaylist && this as Playlist == other as Playlist;
+    return other is LikedSongsPlaylist;
   }
 
   @override

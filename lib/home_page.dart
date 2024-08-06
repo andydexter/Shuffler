@@ -205,9 +205,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 TextButton(
                   child: const Text('Delete'),
                   onPressed: () {
-                    appDB
-                        .deletePlaylistByID(playlist.playlistID)
-                        .then((_) => setState(() => playlists.remove(playlist)));
+                    lg.info("Deleting playlist <${playlist.playlistID}>");
+                    appDB.deletePlaylist(playlist).then((_) => setState(() => playlists.remove(playlist)));
                     Navigator.of(context).pop();
                   },
                 ),

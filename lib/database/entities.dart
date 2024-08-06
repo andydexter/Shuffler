@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/data_objects/error_playlist.dart';
 import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
@@ -25,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
     } else {
       return await GetIt.I<APIUtils>()
           .getPlaylistBySpotifyID(playlist.spotifyID)
-          .onError((error, stackTrace) => SpotifyPlaylist(name: error as String, spotifyID: playlist.spotifyID));
+          .onError((error, stackTrace) => ErrorPlaylist(error: error as String, spotifyID: playlist.spotifyID));
     }
   }
 

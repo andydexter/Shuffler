@@ -8,6 +8,7 @@ import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/data_objects/track.dart';
@@ -31,7 +32,7 @@ class APIUtils {
   ///
   /// Returns a [Future] that completes with a [SpotifyPlaylist] object representing the retrieved playlist, with an `id` of -1.
   /// Throws a (Future) error if there is a problem connecting to the internet.
-  Future<SpotifyPlaylist> getPlaylistBySpotifyID(String spotifyID) async {
+  Future<Playlist> getPlaylistBySpotifyID(String spotifyID) async {
     Map playlist;
     try {
       playlist = jsonDecode((await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$spotifyID'))).body);
@@ -56,9 +57,11 @@ class APIUtils {
   /// The [playlist] parameter specifies the playlist from which to retrieve the tracks.
   /// Returns a [Future] that completes with a list of [Track] objects.
   /// Throws an error if there is a problem connecting to the internet.
-  Future<List<Track>> getTracksForPlaylist(SpotifyPlaylist playlist) async {
+  Future<List<Track>> getTracksForPlaylist(Playlist playlist) async {
     List<Track> tracks = List.empty(growable: true);
-    String? nextUrl = 'https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks';
+    if (playlist is LikedSongsPlaylist) return getLikedSongs();
+    String playlistSpotifyID = (playlist as SpotifyPlaylist).spotifyID;
+    String? nextUrl = 'https://api.spotify.com/v1/playlists/$playlistSpotifyID/tracks';
     do {
       Map tracklist;
       try {
@@ -413,7 +416,7 @@ class APIUtils {
     if (url == '') return const FlutterLogo();
     return Image.network(
       url,
-      errorBuilder: (context, error, stackTrace) => const FlutterLogo(),
+      errorBuilder: (context, error, stackTrace) => const Image(image: AssetImage('assets/images/error-icon.png')),
     );
   }
 

@@ -20,7 +20,7 @@ class SpotifyPlaylist extends Playlist {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is SpotifyPlaylist) {
-      return this as Playlist == other as Playlist;
+      return playlistID == other.playlistID;
     }
     return false;
   }

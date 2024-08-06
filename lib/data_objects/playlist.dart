@@ -13,7 +13,7 @@ abstract class Playlist {
   /// The unique identifier for the playlist.
   /// This can be the spotify ID, or a custom ID depending on the implementation of the playlist.
   /// This property MUST be overridden by subclasses.
-  /// This and only this property MUST be used to compare playlists.
+  /// This property MUST be used to compare playlists.
   String get playlistID;
 
   /// Constructs a Playlist object with the given [name], [tracks], and [image].
