@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'connect_db.dart' as db_conn;
 part 'entities.g.dart';
@@ -18,7 +19,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.customExecutor(super.e);
 
   Future<Playlist> rowToPlaylist(PlaylistTableData playlist) async {
-    return await GetIt.I<APIUtils>().getPlaylist(playlist.spotifyID);
+    if (playlist.spotifyID == LikedSongsPlaylist.likedSongsID) {
+      return LikedSongsPlaylist();
+    } else {
+      return await GetIt.I<APIUtils>()
+          .getPlaylist(playlist.spotifyID)
+          .onError((error, stackTrace) => Playlist(name: error as String, spotifyID: playlist.spotifyID));
+    }
   }
 
   Future<List<Playlist>> getAllPlaylists() async {

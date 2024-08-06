@@ -52,9 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
     List<String> currentIDs = playlists.map((e) => e.spotifyID).toList();
     if (!listEquals(ids, currentIDs)) {
       //Fetch all playlist information and set state
-      await Future.wait(ids.map((e) async => await apiUtils.getPlaylist(e).onError(
-            (error, stackTrace) => Playlist(name: error as String, spotifyID: e),
-          ))).then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
+      await appDB.getAllPlaylists().then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
             playlists.clear();
             playlists.addAll(value);
           })));

@@ -457,6 +457,7 @@ class APIClient {
     'playlist-modify-public',
     'playlist-read-private',
     'user-read-recently-played',
+    'user-library-read',
   ];
   final storage = const FlutterSecureStorage();
   Logger lg = Logger("Shuffler/APIClient");

@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/playlist_cards.dart';
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 
@@ -34,7 +35,8 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
     _manualTextController = TextEditingController();
     apiUtils.getUserPlaylists().then((playlists) {
       setState(() {
-        userPlaylists = playlists;
+        userPlaylists.add(LikedSongsPlaylist());
+        userPlaylists.addAll(playlists);
         loadingPlaylists = false;
       });
     });

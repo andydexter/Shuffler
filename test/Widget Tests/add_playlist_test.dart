@@ -6,6 +6,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/add_playlist_dialog.dart';
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 
@@ -107,6 +108,25 @@ void main() {
   });
 
   group('Import from Account', () {
+    testWidgets('Displays all user playlists and Liked Songs', (WidgetTester tester) async {
+      Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
+      Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
+      Playlist testPlaylist3 = Playlist(name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
+      userPlaylists = [testPlaylist1, testPlaylist2, testPlaylist3];
+      when(mockAPIUtils.getPlaylist('Test ID1')).thenAnswer((_) async => testPlaylist1);
+      when(mockAPIUtils.getPlaylist('Test ID2')).thenAnswer((_) async => testPlaylist2);
+      when(mockAPIUtils.getPlaylist('Test ID3')).thenAnswer((_) async => testPlaylist3);
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.tap(find.text('Import from Account'));
+      await tester.pumpAndSettle();
+
+      for (Playlist playlist in userPlaylists) {
+        expect(find.text(playlist.name), findsOneWidget);
+      }
+      expect(find.text('Liked Songs'), findsOneWidget);
+    });
+
     testWidgets('Add 2', (WidgetTester tester) async {
       Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
       Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
@@ -128,6 +148,25 @@ void main() {
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
       expect(await appDB.getAllPlaylistIDs(), equals([testPlaylist1.spotifyID, testPlaylist2.spotifyID]));
+    });
+
+    testWidgets('Add 1 and Liked Songs', (WidgetTester tester) async {
+      Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
+      Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
+      Playlist testPlaylist3 = Playlist(name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
+      userPlaylists = [testPlaylist1, testPlaylist2, testPlaylist3];
+      when(mockAPIUtils.getPlaylist('Test ID1')).thenAnswer((_) async => testPlaylist1);
+      when(mockAPIUtils.getPlaylist('Test ID2')).thenAnswer((_) async => testPlaylist2);
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.tap(find.text('Import from Account'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Test 1'));
+      await tester.tap(find.text('Liked Songs'));
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(await appDB.getAllPlaylistIDs(), equals([testPlaylist1.spotifyID, LikedSongsPlaylist.likedSongsID]));
     });
 
     testWidgets('Delete 1', (WidgetTester tester) async {
@@ -153,6 +192,28 @@ void main() {
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
       expect(await appDB.getAllPlaylistIDs(), equals([testPlaylist3.spotifyID]));
+    });
+
+    testWidgets('Delete Liked Songs', (WidgetTester tester) async {
+      Playlist testPlaylist1 = Playlist(name: 'Test 1', tracks: [], spotifyID: 'Test ID1');
+      Playlist testPlaylist2 = Playlist(name: 'Test 2', tracks: [], spotifyID: 'Test ID2');
+      Playlist testPlaylist3 = Playlist(name: 'Test 3', tracks: [], spotifyID: 'Test ID3');
+      userPlaylists = [testPlaylist1, testPlaylist2, testPlaylist3];
+      when(mockAPIUtils.getPlaylist('Test ID1')).thenAnswer((_) async => testPlaylist1);
+      when(mockAPIUtils.getPlaylist('Test ID2')).thenAnswer((_) async => testPlaylist2);
+      when(mockAPIUtils.getPlaylist('Test ID3')).thenAnswer((_) async => testPlaylist2);
+      appDB.addPlaylist(testPlaylist1.spotifyID);
+      appDB.addPlaylist(testPlaylist3.spotifyID);
+      appDB.addPlaylist(LikedSongsPlaylist.likedSongsID);
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AddPlaylistDialog())));
+      await tester.tap(find.text('Import from Account'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Liked Songs'));
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(await appDB.getAllPlaylistIDs(), equals([testPlaylist1.spotifyID, testPlaylist3.spotifyID]));
     });
 
     testWidgets('2 Existing, Add 1, Delete 1', (WidgetTester tester) async {
