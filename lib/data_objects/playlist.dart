@@ -38,7 +38,7 @@ class Playlist {
     return name.hashCode ^ spotifyID.hashCode ^ imgUrl.hashCode ^ tracks.hashCode;
   }
 
-  static Playlist fromJson(Map playlist) {
+  factory Playlist.fromJson(Map playlist) {
     String imgUrl = ((playlist['images']?.length ?? 0) == 0) ? '' : playlist['images'][0]['url'];
     return Playlist(
       name: playlist['name'],
