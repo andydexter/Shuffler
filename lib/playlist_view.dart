@@ -74,7 +74,7 @@ class _PlaylistViewState extends State<PlaylistView> {
             }),
         floatingActionButton: FloatingActionButton(
           onPressed: _addPlaylistToQueue,
-          tooltip: 'Add to queue',
+          tooltip: 'Shuffle Playlist',
           child: const Icon(Icons.playlist_add_check),
         ));
   }
