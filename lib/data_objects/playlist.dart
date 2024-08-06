@@ -1,3 +1,5 @@
+import 'package:get_it/get_it.dart';
+import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/data_objects/track.dart';
 import 'dart:math';
 
@@ -7,6 +9,7 @@ class Playlist {
   List<Track> tracks;
   final String imgUrl;
   final String spotifyID;
+  bool tracksLoaded = false;
 
   Playlist({required this.name, required this.id, required this.spotifyID, this.imgUrl = '', this.tracks = const []});
 
@@ -44,5 +47,10 @@ class Playlist {
       imgUrl: imgUrl,
       spotifyID: playlist['id'],
     );
+  }
+
+  Future<void> loadTracks() async {
+    tracks = await GetIt.I<APIUtils>().getTracksForPlaylist(this);
+    tracksLoaded = true;
   }
 }
