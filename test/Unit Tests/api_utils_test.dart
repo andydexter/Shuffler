@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
-import 'package:shuffler/components/track.dart';
+import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
+import 'package:shuffler/data_objects/track.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 
 import 'api_utils_test.mocks.dart';
@@ -20,6 +22,7 @@ void main() {
   setUp(() {
     mockClient = MockClient();
     apiUtils = APIUtils(mockClient);
+    GetIt.I.registerSingleton<APIUtils>(apiUtils);
   });
 
   test('Should retrieve playlist from Spotify API', () async {
@@ -31,8 +34,7 @@ void main() {
         {'url': 'test_image_url'}
       ],
     };
-    final expectedPlaylist = Playlist(
-      id: -1,
+    final expectedPlaylist = SpotifyPlaylist(
       name: 'Test Playlist',
       imgUrl: 'test_image_url',
       spotifyID: 'test_playlist_id',
@@ -41,7 +43,7 @@ void main() {
     when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID')))
         .thenAnswer((_) async => Response(jsonEncode(playlistJson), 200));
 
-    final result = await apiUtils.getPlaylist(playlistID);
+    final result = await apiUtils.getPlaylistBySpotifyID(playlistID);
 
     expect(result, equals(expectedPlaylist));
   });
@@ -52,15 +54,15 @@ void main() {
     when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID')))
         .thenThrow(const SocketException('No internet connection'));
 
-    expect(() => apiUtils.getPlaylist(playlistID), throwsA(equals("Couldn't connect to the internet")));
+    expect(() => apiUtils.getPlaylistBySpotifyID(playlistID), throwsA(equals("Couldn't connect to the internet")));
   });
 
   test('Should retrieve tracks for a playlist', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
     final tracklistJson = HelperMethods.generateTracks(3);
     final expectedTracks = HelperMethods.generateExpectedTracks(3);
 
-    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks')))
         .thenAnswer((_) async => Response(jsonEncode(tracklistJson), 200));
 
     final result = await apiUtils.getTracksForPlaylist(playlist);
@@ -69,13 +71,13 @@ void main() {
   });
 
   test('Should retrieve tracks for a playlist with pagination', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
     final tracklistJsonPage1 = HelperMethods.generateTracks(5);
     tracklistJsonPage1['next'] = 'URL to next page of tracks';
     final tracklistJsonPage2 = HelperMethods.generateTracks(4, start: 6);
     final expectedTracks = HelperMethods.generateExpectedTracks(9);
 
-    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks')))
         .thenAnswer((_) async => Response(jsonEncode(tracklistJsonPage1), 200));
     when(mockClient.get(Uri.parse('URL to next page of tracks')))
         .thenAnswer((_) async => Response(jsonEncode(tracklistJsonPage2), 200));
@@ -85,10 +87,38 @@ void main() {
     expect(result, equals(expectedTracks));
   });
 
-  test('Should handle error when retrieving tracks for a playlist', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+  test('Should retrieve Liked Songs', () async {
+    final tracklistJson = HelperMethods.generateTracks(3);
+    final expectedTracks = HelperMethods.generateExpectedTracks(3);
 
-    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/tracks?limit=50')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJson), 200));
+
+    final result = await apiUtils.getLikedSongs();
+
+    expect(result, equals(expectedTracks));
+  });
+
+  test('Should Liked Songs with pagination', () async {
+    final tracklistJsonPage1 = HelperMethods.generateTracks(5);
+    tracklistJsonPage1['next'] = 'URL to next page of tracks';
+    final tracklistJsonPage2 = HelperMethods.generateTracks(4, start: 6);
+    final expectedTracks = HelperMethods.generateExpectedTracks(9);
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/tracks?limit=50')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJsonPage1), 200));
+    when(mockClient.get(Uri.parse('URL to next page of tracks')))
+        .thenAnswer((_) async => Response(jsonEncode(tracklistJsonPage2), 200));
+
+    final result = await apiUtils.getLikedSongs();
+
+    expect(result, equals(expectedTracks));
+  });
+
+  test('Should handle error when retrieving tracks for a playlist', () async {
+    final playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
+
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks')))
         .thenThrow(const SocketException('No internet connection'));
 
     expect(apiUtils.getTracksForPlaylist(playlist), throwsA(equals("Couldn't connect to the internet")));
@@ -140,7 +170,7 @@ void main() {
 
     Playlist result = (await apiUtils.getPlaylistByTitle('Test Playlist 4'))!;
 
-    expect(result.spotifyID, equals('test_id_4'));
+    expect(result.playlistID, equals('test_id_4'));
     expect(result.name, equals('Test Playlist 4'));
   });
 
@@ -191,7 +221,7 @@ void main() {
 
     Playlist result = await apiUtils.generatePlaylistIfNotExists('Test');
 
-    expect(result, equals(Playlist(name: apiUtils.generatedPlaylistName('Test'), id: -1, spotifyID: 'test_id_5')));
+    expect(result, equals(SpotifyPlaylist(name: apiUtils.generatedPlaylistName('Test'), spotifyID: 'test_id_5')));
   });
 
   test('Should generate playlist', () async {
@@ -205,7 +235,7 @@ void main() {
       'name': apiUtils.generatedPlaylistName('Test'),
       'id': 'Test_id',
     };
-    final generatedPlaylist = Playlist.fromJson(generatedJson);
+    final generatedPlaylist = SpotifyPlaylist.fromJson(generatedJson);
 
     when(mockClient.get(Uri.parse('https://api.spotify.com/v1/me/playlists')))
         .thenAnswer((_) async => Response(jsonEncode(playlistsJson), 200));
@@ -237,7 +267,7 @@ void main() {
   });
 
   test('Should add tracks to playlist', () async {
-    final playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+    final playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
     final tracksOG = HelperMethods.generateExpectedTracks(3);
     final tracksOGJson = HelperMethods.generateTracks(3);
     final trackOGURIs = {
@@ -248,31 +278,31 @@ void main() {
 
     final playlistJson = {'name': 'Test Playlist', 'id': 'test_id', 'description': apiUtils.genDescription};
     //To check generatability
-    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}')))
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}')))
         .thenAnswer((_) async => Response(jsonEncode(playlistJson), 201));
     //To clear tracks
-    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks')))
+    when(mockClient.get(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks')))
         .thenAnswer((_) async => Response(jsonEncode(tracksOGJson), 200));
-    when(mockClient.delete(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+    when(mockClient.delete(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks'),
             body: anyNamed('body')))
         .thenAnswer((_) async => Response('', 200));
     //to add tracks
-    when(mockClient.post(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+    when(mockClient.post(Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks'),
             body: anyNamed('body')))
         .thenAnswer((_) async => Response('', 201));
 
-    await apiUtils.addTracksToGeneratedPlaylist(playlist.spotifyID, tracksNew);
+    await apiUtils.addTracksToGeneratedPlaylist(playlist.playlistID, tracksNew);
 
     expect(
         jsonDecode(verify(mockClient.delete(
-                Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+                Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks'),
                 body: captureAnyNamed('body')))
             .captured
             .first),
         equals(trackOGURIs));
     expect(
         jsonDecode(verify(mockClient.post(
-                Uri.parse('https://api.spotify.com/v1/playlists/${playlist.spotifyID}/tracks'),
+                Uri.parse('https://api.spotify.com/v1/playlists/${playlist.playlistID}/tracks'),
                 body: captureAnyNamed('body')))
             .captured
             .first),
@@ -326,6 +356,10 @@ void main() {
     final result = await apiUtils.getRecentlyPlayedTracks(30);
 
     expect(result, equals(expectedTracks));
+  });
+
+  tearDown(() {
+    GetIt.I.reset();
   });
 }
 

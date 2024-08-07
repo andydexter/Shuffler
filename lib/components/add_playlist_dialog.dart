@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/components/playlist_cards.dart';
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/database/entities.dart';
 
 class AddPlaylistDialog extends StatefulWidget {
@@ -33,7 +35,8 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
     _manualTextController = TextEditingController();
     apiUtils.getUserPlaylists().then((playlists) {
       setState(() {
-        userPlaylists = playlists;
+        userPlaylists.add(LikedSongsPlaylist());
+        userPlaylists.addAll(playlists);
         loadingPlaylists = false;
       });
     });
@@ -99,18 +102,18 @@ class _AddPlaylistDialogState extends State<AddPlaylistDialog> with SingleTicker
         return;
       }
       //Add playlist
-      await appDB.addPlaylist(id);
+      await appDB.addPlaylistByID(id);
     } else {
       List<Playlist> currentPlaylists = await appDB.getAllPlaylists();
       //Delete unselected playlists
       for (Playlist toDelete in currentPlaylists.where((playlist) => !selectedPlaylists.contains(playlist))) {
-        lg.info("Deleting playlist ${toDelete.name} <${toDelete.spotifyID}>");
-        await appDB.deletePlaylist(toDelete.spotifyID);
+        lg.info("Deleting playlist <${toDelete.toString()}>");
+        await appDB.deletePlaylistByID(toDelete.playlistID);
       }
       //Add selected playlists
       for (Playlist toAdd in selectedPlaylists.where((playlist) => !currentPlaylists.contains(playlist))) {
-        lg.info("Adding playlist ${toAdd.name} <${toAdd.spotifyID}>");
-        await appDB.addPlaylist(toAdd.spotifyID);
+        lg.info("Adding playlist <${toAdd.toString()}>");
+        await appDB.addPlaylist(toAdd);
       }
     }
     if (mounted) {
@@ -215,9 +218,10 @@ class _ImportFromAccountState extends State<_ImportFromAccount> {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: widget.userPlaylists.length,
-      itemBuilder: (context, index) => widget.userPlaylists[index].getSelectCard(
-          widget.selectedPlaylists.contains(widget.userPlaylists[index]),
-          (v) => (v ?? false)
+      itemBuilder: (context, index) => PlaylistSelectCard(
+          playlist: widget.userPlaylists[index],
+          value: widget.selectedPlaylists.contains(widget.userPlaylists[index]),
+          onChanged: (v) => (v ?? false)
               ? setState(() => widget.selectedPlaylists.add(widget.userPlaylists[index]))
               : setState(() => widget.selectedPlaylists.remove(widget.userPlaylists[index])),
           textColor: Theme.of(context).colorScheme.onSecondary,

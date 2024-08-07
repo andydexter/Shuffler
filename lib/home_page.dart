@@ -5,7 +5,8 @@ import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/components/playlist_cards.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/components/theme_dialog.dart';
 import 'package:shuffler/components/add_playlist_dialog.dart';
 import 'package:shuffler/database/entities.dart';
@@ -48,12 +49,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<bool> setPlaylistState() async {
     List<String> ids = await appDB.getAllPlaylistIDs();
-    List<String> currentIDs = playlists.map((e) => e.spotifyID).toList();
+    List<String> currentIDs = playlists.map((e) => e.playlistID).toList();
     if (!listEquals(ids, currentIDs)) {
       //Fetch all playlist information and set state
-      await Future.wait(ids.map((e) async => await apiUtils.getPlaylist(e).onError(
-            (error, stackTrace) => Playlist(name: error as String, id: -1, spotifyID: e),
-          ))).then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
+      await appDB.getAllPlaylists().then((value) => WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
             playlists.clear();
             playlists.addAll(value);
           })));
@@ -206,12 +205,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 TextButton(
                   child: const Text('Delete'),
                   onPressed: () {
-                    appDB.deletePlaylist(playlist.spotifyID).then((_) => setState(() => playlists.remove(playlist)));
+                    lg.info("Deleting playlist <${playlist.playlistID}>");
+                    appDB.deletePlaylist(playlist).then((_) => setState(() => playlists.remove(playlist)));
                     Navigator.of(context).pop();
                   },
                 ),
               ],
             ));
+  }
+
+  void navigateToPlaylistView(Playlist playlist) {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Theme(
+                data: Theme.of(context).copyWith(colorScheme: colorScheme), child: PlaylistView(playlist: playlist))));
   }
 
   @override
@@ -279,22 +287,17 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
           child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
           Expanded(
               child: ListView.builder(
             itemCount: playlists.length,
-            itemBuilder: (context, index) => playlists[index].getDisplayCard(
-                () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Theme(
-                            data: Theme.of(context).copyWith(colorScheme: colorScheme),
-                            child: PlaylistView(playlist: playlists[index])))),
-                () => deletePlaylist(playlists[index]),
+            itemBuilder: (context, index) => PlaylistDisplayCard(
+                playlist: playlists[index],
+                //On click, navigate to the playlist view
+                onClick: () => navigateToPlaylistView(playlists[index]),
+                onDelete: () => deletePlaylist(playlists[index]),
                 bgColor: colorScheme!.secondary,
                 textColor: colorScheme!.onSecondary),
           ))

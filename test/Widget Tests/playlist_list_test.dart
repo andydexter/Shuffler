@@ -6,7 +6,9 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/add_playlist_dialog.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/database/entities.dart';
 import 'package:shuffler/home_page.dart';
 import 'playlist_list_test.mocks.dart';
@@ -25,12 +27,13 @@ void main() {
   });
 
   testWidgets('Existing Playlists should be loaded from the database', (WidgetTester tester) async {
-    Playlist existent = Playlist(id: -1, name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
-    Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
-    appDB.addPlaylist(existent.spotifyID);
-    appDB.addPlaylist(existent2.spotifyID);
-    when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
-    when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
+    SpotifyPlaylist existent = SpotifyPlaylist(name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
+    SpotifyPlaylist existent2 = SpotifyPlaylist(name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
+    appDB.addPlaylist(existent);
+    appDB.addPlaylist(existent2);
+    appDB.addPlaylist(LikedSongsPlaylist());
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID")).thenAnswer((_) async => existent);
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID 2")).thenAnswer((_) async => existent2);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -45,24 +48,25 @@ void main() {
 
     final MyHomePage homePage = tester.firstWidget(find.byType(MyHomePage)) as MyHomePage;
 
-    expect(homePage.playlists, equals([existent, existent2]));
+    List<Playlist> expected = [existent, existent2, LikedSongsPlaylist()];
 
-    List<Playlist> expected = [existent, existent2];
+    expect(homePage.playlists, equals(expected));
 
     expect(homePage.playlists, equals(expected));
     List<Playlist> playlists = await appDB.getAllPlaylists();
     expect(playlists, equals(expected));
     expect(find.text("Existent Playlist 1"), findsOneWidget);
     expect(find.text("Existent Playlist 2"), findsOneWidget);
+    expect(find.text('Liked Songs'), findsOneWidget);
   });
 
   testWidgets('Delete 1 playlist', (WidgetTester tester) async {
-    Playlist existent = Playlist(id: -1, name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
-    Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
-    appDB.addPlaylist(existent.spotifyID);
-    appDB.addPlaylist(existent2.spotifyID);
-    when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
-    when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
+    SpotifyPlaylist existent = SpotifyPlaylist(name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
+    SpotifyPlaylist existent2 = SpotifyPlaylist(name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
+    appDB.addPlaylist(existent);
+    appDB.addPlaylist(existent2);
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID")).thenAnswer((_) async => existent);
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID 2")).thenAnswer((_) async => existent2);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -88,10 +92,43 @@ void main() {
     expect(find.text("Existent Playlist 2"), findsOneWidget);
   });
 
+  testWidgets('Delete Liked Songs playlist', (WidgetTester tester) async {
+    SpotifyPlaylist existent = SpotifyPlaylist(name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
+    SpotifyPlaylist existent2 = SpotifyPlaylist(name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
+    appDB.addPlaylist(existent);
+    appDB.addPlaylist(existent2);
+    appDB.addPlaylist(LikedSongsPlaylist());
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID")).thenAnswer((_) async => existent);
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID 2")).thenAnswer((_) async => existent2);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyHomePage(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text("Playlists loaded!"), findsOneWidget);
+    await tester.pump((find.byType(SnackBar).evaluate().first.widget as SnackBar).duration);
+    await tester.pumpAndSettle();
+
+    final MyHomePage homePage = tester.firstWidget(find.byType(MyHomePage)) as MyHomePage;
+
+    expect(homePage.playlists, equals([existent, existent2, LikedSongsPlaylist()]));
+
+    await HelperMethods.deletePlaylist(tester, LikedSongsPlaylist.likedSongsID);
+
+    expect(await appDB.getAllPlaylists(), equals([existent, existent2]));
+    expect(homePage.playlists, equals([existent, existent2]));
+
+    expect(find.text("Existent Playlist 1"), findsOneWidget);
+    expect(find.text("Existent Playlist 2"), findsOneWidget);
+  });
+
   testWidgets('Summons add playlist dialog and reloads playlists afterwards', (WidgetTester tester) async {
-    Playlist existent = Playlist(id: -1, name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
-    appDB.addPlaylist(existent.spotifyID);
-    when(mockAPIUtils.getPlaylist("Existent ID")).thenAnswer((_) async => existent);
+    SpotifyPlaylist existent = SpotifyPlaylist(name: "Existent Playlist 1", tracks: [], spotifyID: 'Existent ID');
+    appDB.addPlaylist(existent);
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID")).thenAnswer((_) async => existent);
     when(mockAPIUtils.getUserPlaylists()).thenAnswer((_) async => []);
 
     await tester.pumpWidget(
@@ -105,10 +142,10 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     expect(find.byType(AddPlaylistDialog), findsOneWidget);
-    Playlist existent2 = Playlist(id: -1, name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
-    appDB.addPlaylist(existent2.spotifyID);
-    appDB.deletePlaylist(existent.spotifyID);
-    when(mockAPIUtils.getPlaylist("Existent ID 2")).thenAnswer((_) async => existent2);
+    SpotifyPlaylist existent2 = SpotifyPlaylist(name: "Existent Playlist 2", tracks: [], spotifyID: 'Existent ID 2');
+    appDB.addPlaylist(existent2);
+    appDB.deletePlaylistByID(existent.playlistID);
+    when(mockAPIUtils.getPlaylistBySpotifyID("Existent ID 2")).thenAnswer((_) async => existent2);
 
     await tester.tap(find.text("Cancel"));
     await tester.pumpAndSettle();

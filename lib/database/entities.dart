@@ -1,7 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/error_playlist.dart';
+import 'package:shuffler/data_objects/liked_songs_playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'connect_db.dart' as db_conn;
 part 'entities.g.dart';
 
@@ -18,7 +21,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.customExecutor(super.e);
 
   Future<Playlist> rowToPlaylist(PlaylistTableData playlist) async {
-    return await GetIt.I<APIUtils>().getPlaylist(playlist.spotifyID);
+    if (playlist.spotifyID == LikedSongsPlaylist.likedSongsID) {
+      return LikedSongsPlaylist();
+    } else {
+      return await GetIt.I<APIUtils>()
+          .getPlaylistBySpotifyID(playlist.spotifyID)
+          .onError((error, stackTrace) => ErrorPlaylist(error: error as String, spotifyID: playlist.spotifyID));
+    }
   }
 
   Future<List<Playlist>> getAllPlaylists() async {
@@ -30,14 +39,28 @@ class AppDatabase extends _$AppDatabase {
     return (await select(playlistTable).get()).map((playlist) => playlist.spotifyID).toList();
   }
 
-  Future<void> addPlaylist(String spotifyID) async {
-    if ((await (select(playlistTable)..where((tbl) => tbl.spotifyID.equals(spotifyID))).get()).isEmpty) {
-      await into(playlistTable).insert(PlaylistTableData(spotifyID: spotifyID));
+  Future<void> addPlaylist(Playlist playlist) async {
+    String id;
+    if (playlist is LikedSongsPlaylist) {
+      id = LikedSongsPlaylist.likedSongsID;
+    } else {
+      id = (playlist as SpotifyPlaylist).playlistID;
+    }
+    addPlaylistByID(id);
+  }
+
+  Future<void> addPlaylistByID(String id) async {
+    if ((await (select(playlistTable)..where((tbl) => tbl.spotifyID.equals(id))).get()).isEmpty) {
+      await into(playlistTable).insert(PlaylistTableData(spotifyID: id));
     }
   }
 
-  Future<void> deletePlaylist(String spotifyID) async {
+  Future<void> deletePlaylistByID(String spotifyID) async {
     await (delete(playlistTable)..where((tbl) => tbl.spotifyID.equals(spotifyID))).go();
+  }
+
+  Future<void> deletePlaylist(Playlist playlist) async {
+    await deletePlaylistByID(playlist.playlistID);
   }
 
   Future<void> deleteAllPlaylists() async {

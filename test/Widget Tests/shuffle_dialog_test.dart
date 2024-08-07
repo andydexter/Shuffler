@@ -4,25 +4,26 @@ import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/components/shuffle_dialog.dart';
-import 'package:shuffler/components/track.dart';
+import 'package:shuffler/data_objects/track.dart';
 
 import 'shuffle_dialog_test.mocks.dart';
 
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  Playlist playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id', tracks: [
-    const Track(title: 'Track 1', uri: 'track_1'),
-    const Track(title: 'Track 2', uri: 'track_2'),
-    const Track(title: 'Track 3', uri: 'track_3'),
-  ]);
+  late SpotifyPlaylist playlist;
 
   setUp(() {
     reset(mockAPIUtils);
     GetIt.instance.registerSingleton<APIUtils>(mockAPIUtils);
     when(mockAPIUtils.getImage(any)).thenAnswer((_) => const FlutterLogo());
+    playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id', tracks: [
+      const Track(title: 'Track 1', uri: 'track_1'),
+      const Track(title: 'Track 2', uri: 'track_2'),
+      const Track(title: 'Track 3', uri: 'track_3'),
+    ]);
   });
 
   testWidgets('Should have correct max tracks', (WidgetTester tester) async {
@@ -86,12 +87,12 @@ void main() {
   });
 
   testWidgets('Add 3 tracks to playlist', (WidgetTester tester) async {
-    Playlist generatedPlaylist = Playlist(name: 'Generated Playlist', id: 2, spotifyID: 'generated_id');
+    SpotifyPlaylist generatedPlaylist = SpotifyPlaylist(name: 'Generated Playlist', spotifyID: 'generated_id');
     when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
     when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name)).thenAnswer((_) async => generatedPlaylist);
     when(mockAPIUtils.addTracksToGeneratedPlaylist('generated_id', playlist.tracks))
         .thenAnswer((_) async => Future.any);
-    when(mockAPIUtils.playPlaylist(generatedPlaylist.spotifyID)).thenAnswer((_) async => Future.any);
+    when(mockAPIUtils.playPlaylist(generatedPlaylist.playlistID)).thenAnswer((_) async => Future.any);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -111,7 +112,7 @@ void main() {
 
     verify(mockAPIUtils.generatePlaylistIfNotExists(playlist.name)).called(1);
     verify(mockAPIUtils.addTracksToGeneratedPlaylist(
-            generatedPlaylist.spotifyID, argThat(containsAll(playlist.tracks))))
+            generatedPlaylist.playlistID, argThat(containsAll(playlist.tracks))))
         .called(1);
 
     await tester.pumpAndSettle();
@@ -121,8 +122,9 @@ void main() {
     await tester.tap(find.text('Play'));
     await tester.pumpAndSettle();
 
-    verify(mockAPIUtils.playPlaylist(generatedPlaylist.spotifyID)).called(1);
+    verify(mockAPIUtils.playPlaylist(generatedPlaylist.playlistID)).called(1);
     verify(mockAPIUtils.waitForPlayerActivated()).called(1);
+    verify(mockAPIUtils.getImage(any)).called(2);
     verifyNoMoreInteractions(mockAPIUtils);
   });
 

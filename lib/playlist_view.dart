@@ -3,7 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
-import 'package:shuffler/components/playlist.dart';
+import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/components/shuffle_dialog.dart';
 
 class PlaylistView extends StatefulWidget {
@@ -22,7 +22,7 @@ class _PlaylistViewState extends State<PlaylistView> {
   @override
   void initState() {
     super.initState();
-    if (widget.playlist.tracks.isEmpty) {
+    if (!widget.playlist.tracksLoaded) {
       WidgetsBinding.instance.addPostFrameCallback((_) => loadTracks());
     }
   }
@@ -32,20 +32,19 @@ class _PlaylistViewState extends State<PlaylistView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => FutureBuilder(
-          future: apiUtils.getTracksForPlaylist(widget.playlist),
+          future: widget.playlist.loadTracks(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+            if (snapshot.hasError) {
+              return ErrorDialog(errorMessage: snapshot.error.toString());
+            } else if (snapshot.connectionState == ConnectionState.done) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Center(child: Text('Tracks loaded!')),
                   duration: Duration(seconds: 2),
                 ));
-                setState(() => widget.playlist.tracks = snapshot.data!);
+                setState(() {});
               });
               Navigator.of(context).pop();
-            } else if (snapshot.hasError ||
-                (snapshot.connectionState == ConnectionState.done && snapshot.data == null)) {
-              return ErrorDialog(errorMessage: snapshot.error.toString());
             }
             return const AlertDialog(
               title: Text('Loading tracks...'),
@@ -75,7 +74,7 @@ class _PlaylistViewState extends State<PlaylistView> {
             }),
         floatingActionButton: FloatingActionButton(
           onPressed: _addPlaylistToQueue,
-          tooltip: 'Add to queue',
+          tooltip: 'Shuffle Playlist',
           child: const Icon(Icons.playlist_add_check),
         ));
   }

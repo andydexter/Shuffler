@@ -11,8 +11,8 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i7;
 import 'package:oauth2/oauth2.dart' as _i2;
 import 'package:shuffler/api_utils.dart' as _i6;
-import 'package:shuffler/components/playlist.dart' as _i4;
-import 'package:shuffler/components/track.dart' as _i9;
+import 'package:shuffler/data_objects/playlist.dart' as _i4;
+import 'package:shuffler/data_objects/track.dart' as _i9;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -116,16 +116,16 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
       ) as String);
 
   @override
-  _i8.Future<_i4.Playlist> getPlaylist(String? spotifyID) =>
+  _i8.Future<_i4.Playlist> getPlaylistBySpotifyID(String? spotifyID) =>
       (super.noSuchMethod(
         Invocation.method(
-          #getPlaylist,
+          #getPlaylistBySpotifyID,
           [spotifyID],
         ),
         returnValue: _i8.Future<_i4.Playlist>.value(_FakePlaylist_2(
           this,
           Invocation.method(
-            #getPlaylist,
+            #getPlaylistBySpotifyID,
             [spotifyID],
           ),
         )),
@@ -137,6 +137,15 @@ class MockAPIUtils extends _i1.Mock implements _i6.APIUtils {
         Invocation.method(
           #getTracksForPlaylist,
           [playlist],
+        ),
+        returnValue: _i8.Future<List<_i9.Track>>.value(<_i9.Track>[]),
+      ) as _i8.Future<List<_i9.Track>>);
+
+  @override
+  _i8.Future<List<_i9.Track>> getLikedSongs() => (super.noSuchMethod(
+        Invocation.method(
+          #getLikedSongs,
+          [],
         ),
         returnValue: _i8.Future<List<_i9.Track>>.value(<_i9.Track>[]),
       ) as _i8.Future<List<_i9.Track>>);

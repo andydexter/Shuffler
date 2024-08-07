@@ -4,8 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
-import 'package:shuffler/components/playlist.dart';
-import 'package:shuffler/components/track.dart';
+import 'package:shuffler/data_objects/spotify_playlist.dart';
+import 'package:shuffler/data_objects/track.dart';
 import 'package:shuffler/playlist_view.dart';
 
 import 'playlist_view_test.mocks.dart';
@@ -13,7 +13,7 @@ import 'playlist_view_test.mocks.dart';
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  Playlist playlist = Playlist(name: 'Test Playlist', id: 1, spotifyID: 'test_id');
+  late SpotifyPlaylist playlist;
   List<Track> tracks = [
     const Track(title: 'Track 1', uri: 'track_1'),
     const Track(title: 'Track 2', uri: 'track_2'),
@@ -23,9 +23,10 @@ void main() {
   setUp(() {
     reset(mockAPIUtils);
     GetIt.instance.registerSingleton<APIUtils>(mockAPIUtils);
-    playlist.tracks = List.empty(growable: true);
     when(mockAPIUtils.getImage(any)).thenAnswer((_) => const FlutterLogo());
+    playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
     when(mockAPIUtils.getTracksForPlaylist(playlist)).thenAnswer((_) async => tracks);
+    playlist.tracks = List.empty(growable: true);
   });
 
   testWidgets('Should display playlist name and tracks', (WidgetTester tester) async {
