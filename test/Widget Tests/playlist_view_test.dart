@@ -13,7 +13,7 @@ import 'playlist_view_test.mocks.dart';
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  SpotifyPlaylist playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
+  late SpotifyPlaylist playlist;
   List<Track> tracks = [
     const Track(title: 'Track 1', uri: 'track_1'),
     const Track(title: 'Track 2', uri: 'track_2'),
@@ -23,9 +23,10 @@ void main() {
   setUp(() {
     reset(mockAPIUtils);
     GetIt.instance.registerSingleton<APIUtils>(mockAPIUtils);
-    playlist.tracks = List.empty(growable: true);
     when(mockAPIUtils.getImage(any)).thenAnswer((_) => const FlutterLogo());
+    playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
     when(mockAPIUtils.getTracksForPlaylist(playlist)).thenAnswer((_) async => tracks);
+    playlist.tracks = List.empty(growable: true);
   });
 
   testWidgets('Should display playlist name and tracks', (WidgetTester tester) async {

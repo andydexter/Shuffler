@@ -13,16 +13,17 @@ import 'shuffle_dialog_test.mocks.dart';
 @GenerateMocks([APIUtils])
 void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
-  SpotifyPlaylist playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id', tracks: [
-    const Track(title: 'Track 1', uri: 'track_1'),
-    const Track(title: 'Track 2', uri: 'track_2'),
-    const Track(title: 'Track 3', uri: 'track_3'),
-  ]);
+  late SpotifyPlaylist playlist;
 
   setUp(() {
     reset(mockAPIUtils);
     GetIt.instance.registerSingleton<APIUtils>(mockAPIUtils);
     when(mockAPIUtils.getImage(any)).thenAnswer((_) => const FlutterLogo());
+    playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id', tracks: [
+      const Track(title: 'Track 1', uri: 'track_1'),
+      const Track(title: 'Track 2', uri: 'track_2'),
+      const Track(title: 'Track 3', uri: 'track_3'),
+    ]);
   });
 
   testWidgets('Should have correct max tracks', (WidgetTester tester) async {
@@ -123,6 +124,7 @@ void main() {
 
     verify(mockAPIUtils.playPlaylist(generatedPlaylist.playlistID)).called(1);
     verify(mockAPIUtils.waitForPlayerActivated()).called(1);
+    verify(mockAPIUtils.getImage(any)).called(2);
     verifyNoMoreInteractions(mockAPIUtils);
   });
 
