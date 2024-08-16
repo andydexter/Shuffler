@@ -13,16 +13,18 @@ As many have noticed, Spotify's shuffling algorithm isn't truly random. Disablin
 
 ## Features
 
-Listed below are the main features of the application:
-
 ### Importing a playlist
-You may import a Spotify Playlist in the home page by *one* of *two* methods after accessing the relevant dialog by pressing the `Add Playlist` FAB:
+You may import a Spotify Playlist in the home page by *one* of *two* methods after accessing the relevant dialog by pressing the `Add Playlist` FAB and then the relevant Tab:
+
 1. Adding manually using the playlist url (Obtained from spotify by clicking Share->URL) or ID (Not URI)
 
 2. Importing playlists saved in Your Library by activating them in the second tab of the dialog (Recommended).
 
 ### Shuffling a playlist
 Clicking a playlist listed on the home page will navigate you to the playlist view, where all tracks will be loaded and displayed. You may then open the Shuffle Dialog using the `Shuffle Playlist` FAB, presenting you with the following settings:
+
+![image](https://github.com/user-attachments/assets/4099c6d2-df87-4132-83b5-07c053669493)
+
 1. ***Omit Recent Tracks***: You may choose to search up to 50 of your most recent **listening history**, and **omit tracks** also contained in this playlist from the shuffled output. `Found Tracks` shows how many recent tracks are to be omitted.
 
 2. ***Shuffle Into Queue***: If this mode is chosen, the shuffled output will be **added** directly to your Spotify **Queue**. Note that this is a very **slow** procedure as 1 track can be added per request. Note that Spotify must be playing something for this endpoint to work, so just press play on a random track or playlist and the warning should disappear in 2 seconds.
