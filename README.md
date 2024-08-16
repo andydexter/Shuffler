@@ -1,8 +1,8 @@
-[![LinkedIn](https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555)](www.linkedin.com/in/andreas-nicolaou-a11009164)
+[![LinkedIn](https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555)](https://www.linkedin.com/in/andreas-nicolaou-a11009164)
 
 # Shuffler
 
-An auxiliary app that allows you to freely shuffle your Spotify playlists.
+An auxiliary app built with [Flutter](https://flutter.dev) that allows you to freely shuffle your Spotify playlists.
 
 ## About
 
@@ -13,9 +13,25 @@ As many have noticed, Spotify's shuffling algorithm isn't truly random. Disablin
 
 ## Features
 
-## Contributing
+Listed below are the main features of the application:
 
-Feel free to create new issues for any bugs or suggestions! This project is still very young so any input or feedback would be greatly appreciated.
+### Importing a playlist
+You may import a Spotify Playlist in the home page by *one* of *two* methods after accessing the relevant dialog by pressing the `Add Playlist` FAB:
+- Adding manually using the playlist url (Obtained from spotify by clicking Share->URL) or ID (Not URI)
+- Importing playlists saved in Your Library by activating them in the second tab of the dialog (Recommended).
+
+### Shuffling a playlist
+Clicking a playlist listed on the home page will navigate you to the playlist view, where all tracks will be loaded and displayed. You may then open the Shuffle Dialog using the `Shuffle Playlist` FAB, presenting you with the following settings:
+1. ***Omit Recent Tracks***: You may choose to search up to 50 of your most recent **listening history**, and **omit tracks** also contained in this playlist from the shuffled output. `Found Tracks` shows how many recent tracks are to be omitted.
+
+2. ***Shuffle Into Queue***: If this mode is chosen, the shuffled output will be **added** directly to your Spotify **Queue**. Note that this is a very **slow** procedure as 1 tracks can be added per request. Note that Spotify must be playing something for this endpoint to work, so just press play on a random track or playlist and the warning should disappear in 2 seconds.
+
+3. ***Shufle Into Playlist***: If this mode is chosen, a new playlist will be **generated**, or if it has been used before, the same playlist will be re-used, and the shuffled output will be added to it. After it has been generated, the option to play it is given. This will start playback on your Spotify, on the first track of the generated playlist, with **shuffle** and **repeat** *off*.
+
+4. ***Number of Tracks***: This is the number of tracks that will be selected from the playlist and form the shuffled output. This number accounts for track omissions.
+
+### Changing the theme
+The dropdown menu accessible from the Home Page App Bar contains a `Change Theme` option. The resulting dialog will prompt for a "Color Seed" on which the new theme will use as well as the choice between light and dark mode.
 
 ## Getting Started
 
@@ -34,6 +50,8 @@ Example `APICredentials.json`:
 }
 ```
 
+If the application starts and freezes on a blank screen, this indicates an error with client authentication, internet access, or potentially database access/initialisation. Run in debug mode and check logs to identify the problem. Don't hesitate to create an issue with the `bug` tag if the problem persists.
+
 > Note: Some older versions use a similar json file in assets. Check the `Client.getClient()` method in [`APIUtils.dart`](lib/api_utils.dart) for more details.
 ---
 
@@ -49,3 +67,7 @@ dart pub global run dhttpd --path doc/api
 ```
 
 before opening `localhost:8080` in a browser.
+
+## Contributing
+
+Feel free to create new issues for any bugs or suggestions! This project is still very young so any input or feedback would be greatly appreciated.
