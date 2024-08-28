@@ -74,4 +74,13 @@ before opening `localhost:8080` in a browser.
 
 ## Contributing
 
-Feel free to create new issues for any bugs or suggestions! This project is still very young so any input or feedback would be greatly appreciated.
+Contributions are greatly appreciated! Feel free to share any questions or ideas in the **Discussions** tab, create an **Issue** for any bugs or feature requests, or:
+1. Fork the repository.
+2. Create a new branch: `git checkout -b feature/your-feature`
+3. Make your changes and commit them: `git commit -m 'Add some feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Submit a pull request.
+
+## License
+
+This project is licensed under the GPL-3.0 License. See the [LICENSE](LICENSE) file for more information.
