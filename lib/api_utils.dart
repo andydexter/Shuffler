@@ -24,6 +24,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/services.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -37,6 +38,7 @@ import 'package:shuffler/data_objects/track.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image/image.dart' as img;
 
 /// The [APIUtils] class provides utility methods for interacting with the Spotify API.
 /// It includes methods for retrieving playlists, retrieving tracks for a playlist, and adding a track to the user's queue.
@@ -165,7 +167,7 @@ class APIUtils {
   /// Returns a [Future] that completes with the generated [SpotifyPlaylist] object.
   /// If an error occurs during the playlist generation process, an error message
   /// is returned as a [Future.error].
-  Future<Playlist> _generatePlaylist(String title) async {
+  Future<Playlist> _generatePlaylist(String title, {String? ogPlaylist}) async {
     Map response;
     String playlist = '{"name": "$title", "description": "$genDescription", "public": false}';
     try {
@@ -179,6 +181,15 @@ class APIUtils {
       return Future.error("Error generating playlist: $e");
     }
     lg.info("Generated Playlist $title with ID <${response['id']}>");
+    if(ogPlaylist != null && ogPlaylist.isNotEmpty) {
+      lg.info("Setting image for playlist $title with ID <${response['id']}> using original playlist <$ogPlaylist>");
+      String base64Image = await watermarkPlaylistImage(ogPlaylist);
+      Response imgSetResponse = await client.put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image);
+      if (imgSetResponse.statusCode != 202) {
+        lg.warning("Error setting image for playlist: ${jsonDecode(imgSetResponse.body)['error']['message']}");
+        return Future.error("Error setting image for playlist: ${jsonDecode(imgSetResponse.body)['error']['message']}");
+      }
+    }
     return SpotifyPlaylist.fromJson(response);
   }
 
@@ -189,9 +200,31 @@ class APIUtils {
   /// Otherwise, it generates a new playlist with the specified title and returns it.
   ///
   /// Returns a [Future] that completes with the generated or existing playlist.
-  Future<Playlist> generatePlaylistIfNotExists(String title) async {
+  Future<Playlist> generatePlaylistIfNotExists(String title, {String? ogPlaylist}) async {
     title = generatedPlaylistName(title);
-    return (await getPlaylistByTitle(title)) ?? (await _generatePlaylist(title));
+    return (await getPlaylistByTitle(title)) ?? (await _generatePlaylist(title, ogPlaylist: ogPlaylist));
+  }
+
+  /// Watermarks the image of a playlist with the Shuffler logo and returns the base64 encoded image.
+  Future<String> watermarkPlaylistImage(String playlistID) async {
+    try {
+      Response imageURL = await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID/images'));
+      List<dynamic> imgResponse = jsonDecode(imageURL.body);
+      lg.info('Retrieved image URL: ${imgResponse[0]['url']} from playlist $playlistID with dimensions ${imgResponse[0]['width']}x${imgResponse[0]['height']}');
+      Response imageBytes = await client.get(Uri.parse(imgResponse[0]['url']));
+      img.Image playlistThumbnail = img.decodeImage(imageBytes.bodyBytes)!;
+      img.Image? shufflerLogo = img.decodePng((await rootBundle.load('assets/images/shuffler_icon_90_opacity.png')).buffer.asUint8List());
+      if(shufflerLogo == null) {
+        lg.severe("Error decoding Shuffler icon");
+        return "";
+      }
+      shufflerLogo = img.copyResize(shufflerLogo, width: playlistThumbnail.width, height: playlistThumbnail.height);
+      playlistThumbnail = img.compositeImage(playlistThumbnail, shufflerLogo);
+      return base64Encode(img.encodeJpg(playlistThumbnail));
+    } on SocketException catch (_, e) {
+      lg.severe(e.toString());
+      return Future.error("Couldn't connect to the internet");
+    }
   }
 
   /// Retrieves a playlist by its title.
@@ -485,6 +518,7 @@ class APIClient {
     'playlist-read-private',
     'user-read-recently-played',
     'user-library-read',
+    'ugc-image-upload',
   ];
   final storage = const FlutterSecureStorage();
   Logger lg = Logger("Shuffler/APIClient");
@@ -613,7 +647,7 @@ class APIClient {
       request.response
         ..statusCode = HttpStatus.ok
         ..headers.contentType = ContentType.html
-        ..write('<html><body><script type="text/javascript">window.close();</script></body></html>')
+        ..write('<html lang="html"><body><script type="text/javascript">window.close();</script></body></html>')
         ..close();
 
       // Close the server

@@ -127,7 +127,7 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
-    final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(widget.playlist.name);
+    final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(widget.playlist.name, ogPlaylist: widget.playlist.playlistID);
     await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
     await Future.delayed(const Duration(seconds: 2));
     return generatedPlaylist;

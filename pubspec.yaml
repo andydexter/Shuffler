@@ -59,6 +59,7 @@ dependencies:
   vm_service: ^14.2.1
   html_unescape: ^2.0.0
   async: ^2.11.0
+  image: ^4.2.0
 
 
 dev_dependencies:
