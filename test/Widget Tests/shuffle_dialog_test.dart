@@ -108,10 +108,10 @@ void main() {
     }
   });
 
-  testWidgets('Add 3 tracks to playlist', (WidgetTester tester) async {
+  testWidgets('Add 3 tracks to generated playlist and play', (WidgetTester tester) async {
     SpotifyPlaylist generatedPlaylist = SpotifyPlaylist(name: 'Generated Playlist', spotifyID: 'generated_id');
     when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
-    when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name)).thenAnswer((_) async => generatedPlaylist);
+    when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name, ogPlaylist: playlist.playlistID)).thenAnswer((_) async => generatedPlaylist);
     when(mockAPIUtils.addTracksToGeneratedPlaylist('generated_id', playlist.tracks))
         .thenAnswer((_) async => Future.any);
     when(mockAPIUtils.playPlaylist(generatedPlaylist.playlistID)).thenAnswer((_) async => Future.any);
@@ -132,7 +132,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
-    verify(mockAPIUtils.generatePlaylistIfNotExists(playlist.name)).called(1);
+    verify(mockAPIUtils.generatePlaylistIfNotExists(playlist.name, ogPlaylist: playlist.playlistID)).called(1);
     verify(mockAPIUtils.addTracksToGeneratedPlaylist(
             generatedPlaylist.playlistID, argThat(containsAll(playlist.tracks))))
         .called(1);

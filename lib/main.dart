@@ -29,22 +29,25 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart' as foundation;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    developer.log(
-      record.message,
-      name: record.loggerName,
-      time: record.time,
-      sequenceNumber: record.sequenceNumber,
-      level: record.level.value,
-      zone: record.zone,
-      error: record.error,
-      stackTrace: record.stackTrace,
-    );
-  });
+  if(foundation.kDebugMode) {
+    Logger.root.level = Level.ALL;
+    Logger.root.onRecord.listen((record) {
+      developer.log(
+        record.message,
+        name: record.loggerName,
+        time: record.time,
+        sequenceNumber: record.sequenceNumber,
+        level: record.level.value,
+        zone: record.zone,
+        error: record.error,
+        stackTrace: record.stackTrace,
+      );
+    });
+  }
   GetIt.instance.registerSingleton<AppDatabase>(AppDatabase());
   try {
     GetIt.instance.registerSingleton<APIUtils>(APIUtils(await APIClient().getClient()));

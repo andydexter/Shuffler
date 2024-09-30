@@ -45,6 +45,7 @@ void main() {
     mockClient = MockClient();
     apiUtils = APIUtils(mockClient);
     GetIt.I.registerSingleton<APIUtils>(apiUtils);
+    TestWidgetsFlutterBinding.ensureInitialized();
   });
 
   test('Should retrieve playlist from Spotify API', () async {
