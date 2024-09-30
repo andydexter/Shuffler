@@ -184,10 +184,13 @@ class APIUtils {
     if(ogPlaylist != null && ogPlaylist.isNotEmpty) {
       lg.info("Setting image for playlist $title with ID <${response['id']}> using original playlist <$ogPlaylist>");
       String base64Image = await watermarkPlaylistImage(ogPlaylist);
-      Response imgSetResponse = await client.put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image);
+      Response imgSetResponse = await client.put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image).catchError(
+              (error, stackTrace) {
+                lg.severe("Error setting image for playlist: $error");
+                return Response('{"error": {"message": "Error setting image"}}', 500);
+              });
       if (imgSetResponse.statusCode != 202) {
         lg.warning("Error setting image for playlist: ${jsonDecode(imgSetResponse.body)['error']['message']}");
-        return Future.error("Error setting image for playlist: ${jsonDecode(imgSetResponse.body)['error']['message']}");
       }
     }
     return SpotifyPlaylist.fromJson(response);
@@ -218,6 +221,8 @@ class APIUtils {
         lg.severe("Error decoding Shuffler icon");
         return "";
       }
+      //Resize both images to 300x300
+      playlistThumbnail = img.copyResize(playlistThumbnail, width: 300, height: 300);
       shufflerLogo = img.copyResize(shufflerLogo, width: playlistThumbnail.width, height: playlistThumbnail.height);
       playlistThumbnail = img.compositeImage(playlistThumbnail, shufflerLogo);
       return base64Encode(img.encodeJpg(playlistThumbnail));
