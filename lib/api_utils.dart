@@ -31,6 +31,7 @@ import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
+import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
@@ -181,14 +182,15 @@ class APIUtils {
       return Future.error("Error generating playlist: $e");
     }
     lg.info("Generated Playlist $title with ID <${response['id']}>");
-    if(ogPlaylist != null && ogPlaylist.isNotEmpty) {
+    if (ogPlaylist != null && ogPlaylist.isNotEmpty) {
       lg.info("Setting image for playlist $title with ID <${response['id']}> using original playlist <$ogPlaylist>");
       String base64Image = await watermarkPlaylistImage(ogPlaylist);
-      Response imgSetResponse = await client.put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image).catchError(
-              (error, stackTrace) {
-                lg.severe("Error setting image for playlist: $error");
-                return Response('{"error": {"message": "Error setting image"}}', 500);
-              });
+      Response imgSetResponse = await client
+          .put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image)
+          .catchError((error, stackTrace) {
+        lg.severe("Error setting image for playlist: $error");
+        return Response('{"error": {"message": "Error setting image"}}', 500);
+      });
       if (imgSetResponse.statusCode != 202) {
         lg.warning("Error setting image for playlist: ${jsonDecode(imgSetResponse.body)['error']['message']}");
       }
@@ -213,11 +215,13 @@ class APIUtils {
     try {
       Response imageURL = await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID/images'));
       List<dynamic> imgResponse = jsonDecode(imageURL.body);
-      lg.info('Retrieved image URL: ${imgResponse[0]['url']} from playlist $playlistID with dimensions ${imgResponse[0]['width']}x${imgResponse[0]['height']}');
+      lg.info(
+          'Retrieved image URL: ${imgResponse[0]['url']} from playlist $playlistID with dimensions ${imgResponse[0]['width']}x${imgResponse[0]['height']}');
       Response imageBytes = await client.get(Uri.parse(imgResponse[0]['url']));
       img.Image playlistThumbnail = img.decodeImage(imageBytes.bodyBytes)!;
-      img.Image? shufflerLogo = img.decodePng((await rootBundle.load('assets/images/shuffler_icon_90_opacity.png')).buffer.asUint8List());
-      if(shufflerLogo == null) {
+      img.Image? shufflerLogo =
+          img.decodePng((await rootBundle.load('assets/images/shuffler_icon_90_opacity.png')).buffer.asUint8List());
+      if (shufflerLogo == null) {
         lg.severe("Error decoding Shuffler icon");
         return "";
       }
@@ -389,6 +393,8 @@ class APIUtils {
   Future<void> addTracksToGeneratedPlaylist(String spotifyID, List<Track> tracks) async {
     if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     await _clearPlaylist(spotifyID);
+    //Remove error tracks
+    tracks.removeWhere((t) => t is ErrorTrack);
     lg.info("Adding ${tracks.length} tracks to playlist with ID $spotifyID");
     for (int i = 0; i < tracks.length; i += 100) {
       try {

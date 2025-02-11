@@ -90,6 +90,12 @@ class PlaylistTableData extends DataClass
   PlaylistTableData copyWith({String? spotifyID}) => PlaylistTableData(
         spotifyID: spotifyID ?? this.spotifyID,
       );
+  PlaylistTableData copyWithCompanion(PlaylistTableCompanion data) {
+    return PlaylistTableData(
+      spotifyID: data.spotifyID.present ? data.spotifyID.value : this.spotifyID,
+    );
+  }
+
   @override
   String toString() {
     return (StringBuffer('PlaylistTableData(')
@@ -159,7 +165,7 @@ class PlaylistTableCompanion extends UpdateCompanion<PlaylistTableData> {
 
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
-  _$AppDatabaseManager get managers => _$AppDatabaseManager(this);
+  $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PlaylistTableTable playlistTable = $PlaylistTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -168,7 +174,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [playlistTable];
 }
 
-typedef $$PlaylistTableTableInsertCompanionBuilder = PlaylistTableCompanion
+typedef $$PlaylistTableTableCreateCompanionBuilder = PlaylistTableCompanion
     Function({
   required String spotifyID,
   Value<int> rowid,
@@ -179,26 +185,71 @@ typedef $$PlaylistTableTableUpdateCompanionBuilder = PlaylistTableCompanion
   Value<int> rowid,
 });
 
+class $$PlaylistTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PlaylistTableTable> {
+  $$PlaylistTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get spotifyID => $composableBuilder(
+      column: $table.spotifyID, builder: (column) => ColumnFilters(column));
+}
+
+class $$PlaylistTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlaylistTableTable> {
+  $$PlaylistTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get spotifyID => $composableBuilder(
+      column: $table.spotifyID, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PlaylistTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlaylistTableTable> {
+  $$PlaylistTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get spotifyID =>
+      $composableBuilder(column: $table.spotifyID, builder: (column) => column);
+}
+
 class $$PlaylistTableTableTableManager extends RootTableManager<
     _$AppDatabase,
     $PlaylistTableTable,
     PlaylistTableData,
     $$PlaylistTableTableFilterComposer,
     $$PlaylistTableTableOrderingComposer,
-    $$PlaylistTableTableProcessedTableManager,
-    $$PlaylistTableTableInsertCompanionBuilder,
-    $$PlaylistTableTableUpdateCompanionBuilder> {
+    $$PlaylistTableTableAnnotationComposer,
+    $$PlaylistTableTableCreateCompanionBuilder,
+    $$PlaylistTableTableUpdateCompanionBuilder,
+    (
+      PlaylistTableData,
+      BaseReferences<_$AppDatabase, $PlaylistTableTable, PlaylistTableData>
+    ),
+    PlaylistTableData,
+    PrefetchHooks Function()> {
   $$PlaylistTableTableTableManager(_$AppDatabase db, $PlaylistTableTable table)
       : super(TableManagerState(
           db: db,
           table: table,
-          filteringComposer:
-              $$PlaylistTableTableFilterComposer(ComposerState(db, table)),
-          orderingComposer:
-              $$PlaylistTableTableOrderingComposer(ComposerState(db, table)),
-          getChildManagerBuilder: (p) =>
-              $$PlaylistTableTableProcessedTableManager(p),
-          getUpdateCompanionBuilder: ({
+          createFilteringComposer: () =>
+              $$PlaylistTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlaylistTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlaylistTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
             Value<String> spotifyID = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -206,7 +257,7 @@ class $$PlaylistTableTableTableManager extends RootTableManager<
             spotifyID: spotifyID,
             rowid: rowid,
           ),
-          getInsertCompanionBuilder: ({
+          createCompanionCallback: ({
             required String spotifyID,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -214,42 +265,32 @@ class $$PlaylistTableTableTableManager extends RootTableManager<
             spotifyID: spotifyID,
             rowid: rowid,
           ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
         ));
 }
 
-class $$PlaylistTableTableProcessedTableManager extends ProcessedTableManager<
+typedef $$PlaylistTableTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $PlaylistTableTable,
     PlaylistTableData,
     $$PlaylistTableTableFilterComposer,
     $$PlaylistTableTableOrderingComposer,
-    $$PlaylistTableTableProcessedTableManager,
-    $$PlaylistTableTableInsertCompanionBuilder,
-    $$PlaylistTableTableUpdateCompanionBuilder> {
-  $$PlaylistTableTableProcessedTableManager(super.$state);
-}
+    $$PlaylistTableTableAnnotationComposer,
+    $$PlaylistTableTableCreateCompanionBuilder,
+    $$PlaylistTableTableUpdateCompanionBuilder,
+    (
+      PlaylistTableData,
+      BaseReferences<_$AppDatabase, $PlaylistTableTable, PlaylistTableData>
+    ),
+    PlaylistTableData,
+    PrefetchHooks Function()>;
 
-class $$PlaylistTableTableFilterComposer
-    extends FilterComposer<_$AppDatabase, $PlaylistTableTable> {
-  $$PlaylistTableTableFilterComposer(super.$state);
-  ColumnFilters<String> get spotifyID => $state.composableBuilder(
-      column: $state.table.spotifyID,
-      builder: (column, joinBuilders) =>
-          ColumnFilters(column, joinBuilders: joinBuilders));
-}
-
-class $$PlaylistTableTableOrderingComposer
-    extends OrderingComposer<_$AppDatabase, $PlaylistTableTable> {
-  $$PlaylistTableTableOrderingComposer(super.$state);
-  ColumnOrderings<String> get spotifyID => $state.composableBuilder(
-      column: $state.table.spotifyID,
-      builder: (column, joinBuilders) =>
-          ColumnOrderings(column, joinBuilders: joinBuilders));
-}
-
-class _$AppDatabaseManager {
+class $AppDatabaseManager {
   final _$AppDatabase _db;
-  _$AppDatabaseManager(this._db);
+  $AppDatabaseManager(this._db);
   $$PlaylistTableTableTableManager get playlistTable =>
       $$PlaylistTableTableTableManager(_db, _db.playlistTable);
 }

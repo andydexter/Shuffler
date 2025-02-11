@@ -26,6 +26,7 @@ import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/data_objects/track.dart';
 import 'package:shuffler/playlist_view.dart';
@@ -48,7 +49,6 @@ void main() {
     when(mockAPIUtils.getImage(any)).thenAnswer((_) => const FlutterLogo());
     playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
     when(mockAPIUtils.getTracksForPlaylist(playlist)).thenAnswer((_) async => tracks);
-    playlist.tracks = List.empty(growable: true);
   });
 
   testWidgets('Should display playlist name and tracks', (WidgetTester tester) async {
@@ -79,6 +79,26 @@ void main() {
     expect(find.text('Test Playlist'), findsOneWidget);
     for (Track track in tracks) {
       expect(find.text(track.title), findsOneWidget);
+    }
+  });
+
+  testWidgets('Should process Error Tracks', (WidgetTester tester) async {
+    tracks.insert(1, const ErrorTrack(error: "Penis"));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PlaylistView(playlist: playlist),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Test Playlist'), findsOneWidget);
+    for (Track track in tracks) {
+      if (track is! ErrorTrack) {
+        expect(find.text(track.title), findsOneWidget);
+      } else {
+        expect(find.text(track.error), findsOneWidget);
+      }
     }
   });
 

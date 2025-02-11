@@ -23,6 +23,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shuffler/api_utils.dart';
+import 'package:shuffler/data_objects/error_track.dart';
 
 class Track {
   final String title;
@@ -41,7 +42,11 @@ class Track {
   }
 
   static Track fromJson(Map item) {
-    return Track(title: item['name'], uri: item['uri'], imgURL: item['album']?['images']?[0]?['url'] ?? '');
+    try {
+      return Track(title: item['name'], uri: item['uri'], imgURL: item['album']?['images']?[0]?['url'] ?? '');
+    } catch (_, st) {
+      return ErrorTrack(error: st.toString());
+    }
   }
 
   @override
