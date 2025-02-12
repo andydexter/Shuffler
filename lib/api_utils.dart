@@ -96,7 +96,7 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       for (var item in tracklist['items']) {
-        tracks.add(Track.fromJson(item['track']));
+        tracks.add(Track.fromJson(item));
       }
       nextUrl = tracklist['next'];
     } while (nextUrl != null);
@@ -128,7 +128,7 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       for (var item in tracklist['items']) {
-        tracks.add(Track.fromJson(item['track']));
+        tracks.add(Track.fromJson(item));
       }
       nextUrl = tracklist['next'];
     } while (nextUrl != null);
@@ -466,7 +466,7 @@ class APIUtils {
     try {
       response = jsonDecode((await client.get(nextUrl)).body);
       for (var item in response['items']) {
-        tracks.add(Track.fromJson(item['track']));
+        tracks.add(Track.fromJson(item));
       }
     } on SocketException catch (_, e) {
       lg.severe(e.toString());

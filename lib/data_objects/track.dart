@@ -42,6 +42,8 @@ class Track {
   }
 
   static Track fromJson(Map item) {
+    if (item['track'] == null) return const ErrorTrack(error: "Invalid Track");
+    item = item['track'];
     try {
       return Track(title: item['name'], uri: item['uri'], imgURL: item['album']?['images']?[0]?['url'] ?? '');
     } catch (_, st) {
