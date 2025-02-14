@@ -72,7 +72,6 @@ void main() {
 
       expect(result, equals(expectedPlaylist));
     });
-    ;
 
     test('Should handle error when retrieving playlist from Spotify API', () async {
       const playlistID = 'test_playlist_id';
