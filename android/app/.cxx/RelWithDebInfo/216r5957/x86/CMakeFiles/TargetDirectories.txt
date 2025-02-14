@@ -1,0 +1,2 @@
+/home/andy/projects/shuffler/shuffler/android/app/.cxx/RelWithDebInfo/216r5957/x86/CMakeFiles/edit_cache.dir
+/home/andy/projects/shuffler/shuffler/android/app/.cxx/RelWithDebInfo/216r5957/x86/CMakeFiles/rebuild_cache.dir
