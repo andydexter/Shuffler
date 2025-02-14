@@ -47,7 +47,10 @@ jobs:
         run: flutter --version
         
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+            flutter upgrade
+            dart pub upgrade
+            flutter pub get
       - name: Clean project
         run: flutter clean
 
