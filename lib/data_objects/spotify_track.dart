@@ -26,7 +26,7 @@ import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/track.dart';
 
-class SpotifyTrack implements Track {
+class SpotifyTrack with DefaultTrackWidget implements Track {
   @override
   final String title;
   @override
@@ -38,16 +38,6 @@ class SpotifyTrack implements Track {
 
   const SpotifyTrack({required this.title, required this.uri, this.imgURL = ''});
 
-  @override
-  Widget getWidget() {
-    return Card(
-      child: ListTile(
-        leading: image,
-        title: Text(title),
-      ),
-    );
-  }
-
   static Track fromJson(Map? item) {
     if (item == null) return const ErrorTrack(error: 'Invalid Item');
     if (item['track'] == null) return const ErrorTrack(error: "Invalid Track");
@@ -57,6 +47,11 @@ class SpotifyTrack implements Track {
     } catch (_, st) {
       return ErrorTrack(error: st.toString());
     }
+  }
+
+  @override
+  Widget getWidget() {
+    return getDefaultTrackWidget(this);
   }
 
   @override

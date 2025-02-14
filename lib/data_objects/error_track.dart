@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shuffler/data_objects/track.dart';
 
-class ErrorTrack implements Track {
+class ErrorTrack with DefaultTrackWidget implements Track {
   final String error;
   final String spotifyID;
   @override
@@ -15,12 +15,7 @@ class ErrorTrack implements Track {
 
   @override
   Widget getWidget() {
-    return Card(
-      child: ListTile(
-        leading: image,
-        title: Text(error),
-      ),
-    );
+    return getDefaultTrackWidget(this);
   }
 
   @override

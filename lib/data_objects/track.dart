@@ -19,11 +19,11 @@
 ///
 library;
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/spotify_track.dart';
 
-abstract class Track {
+abstract interface class Track {
   String get title;
   String get uri;
   Widget get image;
@@ -36,4 +36,15 @@ abstract class Track {
   }
 
   Widget getWidget();
+}
+
+mixin DefaultTrackWidget {
+  Widget getDefaultTrackWidget(Track t) {
+    return Card(
+      child: ListTile(
+        leading: t.image,
+        title: Text(t.title),
+      ),
+    );
+  }
 }
