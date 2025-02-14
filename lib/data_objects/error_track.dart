@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:shuffler/data_objects/track.dart';
 
-class ErrorTrack extends Track {
+class ErrorTrack implements Track {
   final String error;
   final String spotifyID;
+  @override
+  Widget get image => const Image(image: AssetImage('assets/images/error-icon.png'));
+  @override
+  String get title => error;
+  @override
+  String get uri => spotifyID;
 
-  const ErrorTrack({required this.error, this.spotifyID = ''}) : super(title: error, uri: spotifyID);
+  const ErrorTrack({required this.error, this.spotifyID = ''});
 
   @override
   Widget getWidget() {
     return Card(
       child: ListTile(
-        leading: const Image(image: AssetImage('assets/images/error-icon.png')),
+        leading: image,
         title: Text(error),
       ),
     );
@@ -33,6 +39,6 @@ class ErrorTrack extends Track {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return "<Track: $error, $uri>";
+    return "<ErrorTrack: $error, $uri>";
   }
 }

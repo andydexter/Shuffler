@@ -28,6 +28,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
+import 'package:shuffler/data_objects/spotify_track.dart';
 import 'package:shuffler/data_objects/track.dart';
 import 'package:shuffler/playlist_view.dart';
 
@@ -38,9 +39,9 @@ void main() {
   final MockAPIUtils mockAPIUtils = MockAPIUtils();
   late SpotifyPlaylist playlist;
   List<Track> tracks = [
-    const Track(title: 'Track 1', uri: 'track_1'),
-    const Track(title: 'Track 2', uri: 'track_2'),
-    const Track(title: 'Track 3', uri: 'track_3'),
+    const SpotifyTrack(title: 'Track 1', uri: 'track_1'),
+    const SpotifyTrack(title: 'Track 2', uri: 'track_2'),
+    const SpotifyTrack(title: 'Track 3', uri: 'track_3'),
   ];
 
   setUp(() {

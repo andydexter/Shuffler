@@ -28,6 +28,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
 import 'package:shuffler/components/shuffle_dialog.dart';
+import 'package:shuffler/data_objects/spotify_track.dart';
 import 'package:shuffler/data_objects/track.dart';
 
 import 'shuffle_dialog_test.mocks.dart';
@@ -42,9 +43,9 @@ void main() {
     GetIt.instance.registerSingleton<APIUtils>(mockAPIUtils);
     when(mockAPIUtils.getImage(any)).thenAnswer((_) => const FlutterLogo());
     playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id', tracks: [
-      const Track(title: 'Track 1', uri: 'track_1'),
-      const Track(title: 'Track 2', uri: 'track_2'),
-      const Track(title: 'Track 3', uri: 'track_3'),
+      const SpotifyTrack(title: 'Track 1', uri: 'track_1'),
+      const SpotifyTrack(title: 'Track 2', uri: 'track_2'),
+      const SpotifyTrack(title: 'Track 3', uri: 'track_3'),
     ]);
   });
 
@@ -111,7 +112,8 @@ void main() {
   testWidgets('Add 3 tracks to generated playlist and play', (WidgetTester tester) async {
     SpotifyPlaylist generatedPlaylist = SpotifyPlaylist(name: 'Generated Playlist', spotifyID: 'generated_id');
     when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);
-    when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name, ogPlaylist: playlist.playlistID)).thenAnswer((_) async => generatedPlaylist);
+    when(mockAPIUtils.generatePlaylistIfNotExists(playlist.name, ogPlaylist: playlist.playlistID))
+        .thenAnswer((_) async => generatedPlaylist);
     when(mockAPIUtils.addTracksToGeneratedPlaylist('generated_id', playlist.tracks))
         .thenAnswer((_) async => Future.any);
     when(mockAPIUtils.playPlaylist(generatedPlaylist.playlistID)).thenAnswer((_) async => Future.any);
@@ -152,10 +154,10 @@ void main() {
 
   testWidgets('Should not shuffle recently listened tracks', (WidgetTester tester) async {
     List<Track> recentTracks = [
-      const Track(title: 'recent 1', uri: 'recent1'),
-      const Track(title: 'recent 2', uri: 'recent2'),
+      const SpotifyTrack(title: 'recent 1', uri: 'recent1'),
+      const SpotifyTrack(title: 'recent 2', uri: 'recent2'),
       playlist.tracks.last,
-      const Track(title: 'recent 3', uri: 'recent3'),
+      const SpotifyTrack(title: 'recent 3', uri: 'recent3'),
     ];
     when(mockAPIUtils.getRecentlyPlayedTracks(20)).thenAnswer((_) async => recentTracks);
     when(mockAPIUtils.waitForPlayerActivated()).thenAnswer((_) async => Future.any);

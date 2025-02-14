@@ -17,56 +17,23 @@
 ///
 ///     Author E-mail address: andydexter123@gmail.com
 ///
-
 library;
 
-import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:shuffler/api_utils.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shuffler/data_objects/error_track.dart';
+import 'package:shuffler/data_objects/spotify_track.dart';
 
-class Track {
-  final String title;
-  final String imgURL;
-  final String uri;
+abstract class Track {
+  String get title;
+  String get uri;
+  Widget get image;
 
-  const Track({required this.title, required this.uri, this.imgURL = ''});
-
-  Widget getWidget() {
-    return Card(
-      child: ListTile(
-        leading: GetIt.I<APIUtils>().getImage(imgURL),
-        title: Text(title),
-      ),
-    );
+  static Track fromJson(Map? item) {
+    if (item == null) return const ErrorTrack(error: "Invalid Track");
+    if (item['episode'] != null) return const ErrorTrack(error: "Podcasts are not supported yet");
+    if (item['track'] != null) return SpotifyTrack.fromJson(item);
+    return const ErrorTrack(error: "Unsupported Item");
   }
 
-  static Track fromJson(Map item) {
-    if (item['track'] == null) return const ErrorTrack(error: "Invalid Track");
-    item = item['track'];
-    try {
-      return Track(title: item['name'], uri: item['uri'], imgURL: item['album']?['images']?[0]?['url'] ?? '');
-    } catch (_, st) {
-      return ErrorTrack(error: st.toString());
-    }
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is Track) {
-      return uri == other.uri && title == other.title && imgURL == other.imgURL;
-    }
-    return false;
-  }
-
-  @override
-  int get hashCode {
-    return title.hashCode ^ uri.hashCode ^ imgURL.hashCode;
-  }
-
-  @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return "<Track: $title, $uri, $imgURL>";
-  }
+  Widget getWidget();
 }

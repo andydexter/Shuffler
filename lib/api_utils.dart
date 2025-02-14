@@ -80,7 +80,7 @@ class APIUtils {
   /// Retrieves a list of tracks for a given playlist.
   ///
   /// The [playlist] parameter specifies the playlist from which to retrieve the tracks.
-  /// Returns a [Future] that completes with a list of [Track] objects.
+  /// Returns a [Future] that completes with a list of [SpotifyTrack] objects.
   /// Throws an error if there is a problem connecting to the internet.
   Future<List<Track>> getTracksForPlaylist(Playlist playlist) async {
     List<Track> tracks = List.empty(growable: true);
@@ -108,10 +108,10 @@ class APIUtils {
   ///
   /// This method makes an asynchronous HTTP GET request to the Spotify API
   /// to fetch the user's liked songs. It paginates through the results
-  /// and returns a [List] of [Track] objects representing the liked songs.
+  /// and returns a [List] of [SpotifyTrack] objects representing the liked songs.
   ///
   /// Returns:
-  /// - A [Future] that resolves to a list of [Track] objects representing
+  /// - A [Future] that resolves to a list of [SpotifyTrack] objects representing
   ///   the user's liked songs.
   /// - If an error occurs during the HTTP request or if there is a problem
   ///   connecting to the internet, a [Future.error] is returned with an
@@ -144,6 +144,7 @@ class APIUtils {
   /// If the request is successful (status code 204), the method returns a completed Future.
   /// If there is an error, the method returns a Future with an error message.
   Future<void> addTrackToQueue(Track track) async {
+    if (track.uri == '') return Future.error('Invalid URI');
     Response response;
     try {
       response = await client.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}'));
@@ -382,7 +383,7 @@ class APIUtils {
   /// Adds tracks to a generated playlist on Spotify.
   ///
   /// The [spotifyID] parameter specifies the ID of the playlist on Spotify.
-  /// The [tracks] parameter is a list of [Track] objects representing the tracks to be added.
+  /// The [tracks] parameter is a list of [SpotifyTrack] objects representing the tracks to be added.
   ///
   /// Throws an error if the playlist is not a Shuffler-generated playlist,
   /// if there is an error adding tracks to the playlist,
@@ -455,7 +456,7 @@ class APIUtils {
   /// The [amount] parameter specifies the maximum number of tracks to retrieve.
   /// If [amount] is 0, an empty list is returned.
   ///
-  /// Returns a [Future] that resolves to a list of [Track] objects representing
+  /// Returns a [Future] that resolves to a list of [SpotifyTrack] objects representing
   /// the recently played tracks.
   /// Throws an error if there is a problem connecting to the internet.
   Future<List<Track>> getRecentlyPlayedTracks(int amount) async {

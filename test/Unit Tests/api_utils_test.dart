@@ -32,7 +32,7 @@ import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
-import 'package:shuffler/data_objects/track.dart';
+import 'package:shuffler/data_objects/spotify_track.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 
 import 'api_utils_test.mocks.dart';
@@ -154,7 +154,7 @@ void main() {
 
     test('Should handle error for specific tracks', () async {
       final Map tracklistJson = HelperMethods.generateTracks(4);
-      final List<Track> expected = HelperMethods.generateExpectedTracks(4);
+      final List<SpotifyTrack> expected = HelperMethods.generateExpectedTracks(4);
       final playlist = SpotifyPlaylist(name: 'Test Playlist', spotifyID: 'test_id');
 
       tracklistJson['items'][1] = {
@@ -176,7 +176,7 @@ void main() {
 
   group('Add Tracks to Queue', () {
     test('Should add track to user\'s queue', () async {
-      const track = Track(title: 'Test Track', uri: 'test_uri');
+      const track = SpotifyTrack(title: 'Test Track', uri: 'test_uri');
 
       when(mockClient.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}')))
           .thenAnswer((_) async => Response('', 200));
@@ -187,7 +187,7 @@ void main() {
     });
 
     test('Should handle error when adding track to user\'s queue', () async {
-      const track = Track(title: 'Test Track', uri: 'test_uri');
+      const track = SpotifyTrack(title: 'Test Track', uri: 'test_uri');
 
       when(mockClient.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}')))
           .thenAnswer((_) async => Response(
@@ -436,10 +436,10 @@ class HelperMethods {
     return tracklistJson;
   }
 
-  static List<Track> generateExpectedTracks(int count, {int start = 1}) {
-    List<Track> expectedTracks = [];
+  static List<SpotifyTrack> generateExpectedTracks(int count, {int start = 1}) {
+    List<SpotifyTrack> expectedTracks = [];
     for (int i = start; i < count + start; i++) {
-      expectedTracks.add(Track(
+      expectedTracks.add(SpotifyTrack(
         title: 'Track $i',
         uri: 'track_$i',
         imgURL: 'test_image_url_$i',
