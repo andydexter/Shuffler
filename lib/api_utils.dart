@@ -31,6 +31,7 @@ import 'package:get_it/get_it.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
+import 'package:shuffler/data_objects/error_track.dart';
 import 'package:shuffler/data_objects/liked_songs_playlist.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/data_objects/spotify_playlist.dart';
@@ -79,7 +80,7 @@ class APIUtils {
   /// Retrieves a list of tracks for a given playlist.
   ///
   /// The [playlist] parameter specifies the playlist from which to retrieve the tracks.
-  /// Returns a [Future] that completes with a list of [Track] objects.
+  /// Returns a [Future] that completes with a list of [SpotifyTrack] objects.
   /// Throws an error if there is a problem connecting to the internet.
   Future<List<Track>> getTracksForPlaylist(Playlist playlist) async {
     List<Track> tracks = List.empty(growable: true);
@@ -95,7 +96,7 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       for (var item in tracklist['items']) {
-        tracks.add(Track.fromJson(item['track']));
+        tracks.add(Track.fromJson(item));
       }
       nextUrl = tracklist['next'];
     } while (nextUrl != null);
@@ -107,10 +108,10 @@ class APIUtils {
   ///
   /// This method makes an asynchronous HTTP GET request to the Spotify API
   /// to fetch the user's liked songs. It paginates through the results
-  /// and returns a [List] of [Track] objects representing the liked songs.
+  /// and returns a [List] of [SpotifyTrack] objects representing the liked songs.
   ///
   /// Returns:
-  /// - A [Future] that resolves to a list of [Track] objects representing
+  /// - A [Future] that resolves to a list of [SpotifyTrack] objects representing
   ///   the user's liked songs.
   /// - If an error occurs during the HTTP request or if there is a problem
   ///   connecting to the internet, a [Future.error] is returned with an
@@ -127,7 +128,7 @@ class APIUtils {
         return Future.error("Couldn't connect to the internet");
       }
       for (var item in tracklist['items']) {
-        tracks.add(Track.fromJson(item['track']));
+        tracks.add(Track.fromJson(item));
       }
       nextUrl = tracklist['next'];
     } while (nextUrl != null);
@@ -143,6 +144,7 @@ class APIUtils {
   /// If the request is successful (status code 204), the method returns a completed Future.
   /// If there is an error, the method returns a Future with an error message.
   Future<void> addTrackToQueue(Track track) async {
+    if (track.uri == '') return Future.error('Invalid URI');
     Response response;
     try {
       response = await client.post(Uri.parse('https://api.spotify.com/v1/me/player/queue?uri=${track.uri}'));
@@ -181,14 +183,15 @@ class APIUtils {
       return Future.error("Error generating playlist: $e");
     }
     lg.info("Generated Playlist $title with ID <${response['id']}>");
-    if(ogPlaylist != null && ogPlaylist.isNotEmpty) {
+    if (ogPlaylist != null && ogPlaylist.isNotEmpty) {
       lg.info("Setting image for playlist $title with ID <${response['id']}> using original playlist <$ogPlaylist>");
       String base64Image = await watermarkPlaylistImage(ogPlaylist);
-      Response imgSetResponse = await client.put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image).catchError(
-              (error, stackTrace) {
-                lg.severe("Error setting image for playlist: $error");
-                return Response('{"error": {"message": "Error setting image"}}', 500);
-              });
+      Response imgSetResponse = await client
+          .put(Uri.parse('https://api.spotify.com/v1/playlists/${response['id']}/images'), body: base64Image)
+          .catchError((error, stackTrace) {
+        lg.severe("Error setting image for playlist: $error");
+        return Response('{"error": {"message": "Error setting image"}}', 500);
+      });
       if (imgSetResponse.statusCode != 202) {
         lg.warning("Error setting image for playlist: ${jsonDecode(imgSetResponse.body)['error']['message']}");
       }
@@ -213,11 +216,13 @@ class APIUtils {
     try {
       Response imageURL = await client.get(Uri.parse('https://api.spotify.com/v1/playlists/$playlistID/images'));
       List<dynamic> imgResponse = jsonDecode(imageURL.body);
-      lg.info('Retrieved image URL: ${imgResponse[0]['url']} from playlist $playlistID with dimensions ${imgResponse[0]['width']}x${imgResponse[0]['height']}');
+      lg.info(
+          'Retrieved image URL: ${imgResponse[0]['url']} from playlist $playlistID with dimensions ${imgResponse[0]['width']}x${imgResponse[0]['height']}');
       Response imageBytes = await client.get(Uri.parse(imgResponse[0]['url']));
       img.Image playlistThumbnail = img.decodeImage(imageBytes.bodyBytes)!;
-      img.Image? shufflerLogo = img.decodePng((await rootBundle.load('assets/images/shuffler_icon_90_opacity.png')).buffer.asUint8List());
-      if(shufflerLogo == null) {
+      img.Image? shufflerLogo =
+          img.decodePng((await rootBundle.load('assets/images/shuffler_icon_90_opacity.png')).buffer.asUint8List());
+      if (shufflerLogo == null) {
         lg.severe("Error decoding Shuffler icon");
         return "";
       }
@@ -378,7 +383,7 @@ class APIUtils {
   /// Adds tracks to a generated playlist on Spotify.
   ///
   /// The [spotifyID] parameter specifies the ID of the playlist on Spotify.
-  /// The [tracks] parameter is a list of [Track] objects representing the tracks to be added.
+  /// The [tracks] parameter is a list of [SpotifyTrack] objects representing the tracks to be added.
   ///
   /// Throws an error if the playlist is not a Shuffler-generated playlist,
   /// if there is an error adding tracks to the playlist,
@@ -389,6 +394,8 @@ class APIUtils {
   Future<void> addTracksToGeneratedPlaylist(String spotifyID, List<Track> tracks) async {
     if (!await isGeneratedPlaylist(spotifyID)) return Future.error("Playlist is not a Shuffler-generated playlist");
     await _clearPlaylist(spotifyID);
+    //Remove error tracks
+    tracks.removeWhere((t) => t is ErrorTrack);
     lg.info("Adding ${tracks.length} tracks to playlist with ID $spotifyID");
     for (int i = 0; i < tracks.length; i += 100) {
       try {
@@ -449,7 +456,7 @@ class APIUtils {
   /// The [amount] parameter specifies the maximum number of tracks to retrieve.
   /// If [amount] is 0, an empty list is returned.
   ///
-  /// Returns a [Future] that resolves to a list of [Track] objects representing
+  /// Returns a [Future] that resolves to a list of [SpotifyTrack] objects representing
   /// the recently played tracks.
   /// Throws an error if there is a problem connecting to the internet.
   Future<List<Track>> getRecentlyPlayedTracks(int amount) async {
@@ -460,7 +467,7 @@ class APIUtils {
     try {
       response = jsonDecode((await client.get(nextUrl)).body);
       for (var item in response['items']) {
-        tracks.add(Track.fromJson(item['track']));
+        tracks.add(Track.fromJson(item));
       }
     } on SocketException catch (_, e) {
       lg.severe(e.toString());

@@ -33,7 +33,7 @@ import 'package:flutter/foundation.dart' as foundation;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if(foundation.kDebugMode) {
+  if (foundation.kDebugMode) {
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
       developer.log(
@@ -79,7 +79,7 @@ Future<void> setPreferenceBrightness(Brightness brightness) async {
 }
 
 Future<void> setPreferenceColor(Color color) async {
-  await GetIt.instance<SharedPreferences>().setInt('colorSeed', color.value);
+  await GetIt.instance<SharedPreferences>().setInt('colorSeed', color.toARGB32());
 }
 
 class MyApp extends StatefulWidget {

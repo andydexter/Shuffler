@@ -38,7 +38,7 @@ dependencies:
   oauth2: ^2.0.2
   url_launcher: ^6.3.0
   app_links: ^6.1.1
-  get_it: ^7.7.0
+  get_it: ^8.0.3
   http: ^1.2.1
   flutter_secure_storage: ^9.2.2
   drift: ^2.18.0
@@ -46,15 +46,15 @@ dependencies:
   sqlite3: ^2.2.0
   path_provider: ^2.0.0
   path: ^1.9.0
-  simple_loading_dialog: ^0.5.0
+  simple_loading_dialog: ^1.0.0
   shared_preferences: ^2.2.3
   flutter_colorpicker: ^1.1.0
   logging: ^1.2.0
   package_info_plus: ^8.0.0
-  leak_tracker: '>=10.0.4 <=10.0.5'
-  leak_tracker_flutter_testing: '>=3.0.3 <=3.0.5'
+  leak_tracker: ^10.0.8
+  leak_tracker_flutter_testing: ^3.0.9
   material_color_utilities: '>=0.8.0 <=0.12.0'
-  meta: '>=1.12.0 <=1.15.0'
+  meta: ^1.16.0
   test_api: ^0.7.0
   vm_service: ^14.2.1
   html_unescape: ^2.0.0
@@ -72,11 +72,11 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   drift_dev: ^2.18.0
   build_runner: ^2.4.9
   mockito: ^5.4.4
-  flutter_launcher_icons: "^0.13.1"
+  flutter_launcher_icons: ^0.14.3
   rename_app: ^1.6.1
 
 # For information on the generic Dart part of this file, see the

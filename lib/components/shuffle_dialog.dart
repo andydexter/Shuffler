@@ -127,7 +127,8 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
-    final Playlist generatedPlaylist = await apiUtils.generatePlaylistIfNotExists(widget.playlist.name, ogPlaylist: widget.playlist.playlistID);
+    final Playlist generatedPlaylist =
+        await apiUtils.generatePlaylistIfNotExists(widget.playlist.name, ogPlaylist: widget.playlist.playlistID);
     await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
     await Future.delayed(const Duration(seconds: 2));
     return generatedPlaylist;
@@ -168,8 +169,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
       );
     toShuffle = toShuffle.sublist(0, tracksToShuffle.toInt());
     if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoQueue) {
-      await addTracksToQueue(toShuffle)
-          .then((_) => showDialog(
+      await addTracksToQueue(toShuffle).then((_) {
+        if (context.mounted) {
+          showDialog(
               context: context,
               builder: (BuildContext context) => AlertDialog(
                     title: const Text('Tracks added to queue!'),
@@ -181,9 +183,13 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                         },
                       ),
                     ],
-                  )))
-          .catchError((error) =>
-              showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString())));
+                  ));
+        }
+      }).catchError((error) {
+        if (context.mounted) {
+          showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString()));
+        }
+      });
     }
     if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
       await addTracksToPlaylist(toShuffle);
