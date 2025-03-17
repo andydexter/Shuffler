@@ -21,7 +21,6 @@
 library;
 
 import 'dart:async';
-import 'dart:math';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -30,6 +29,7 @@ import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/components/progress_dialog.dart';
+import 'package:shuffler/data_objects/shuffle_tool.dart';
 import 'package:shuffler/data_objects/track.dart';
 
 class ShuffleDialog extends StatefulWidget {
@@ -41,26 +41,24 @@ class ShuffleDialog extends StatefulWidget {
   State<ShuffleDialog> createState() => _ShuffleDialogState();
 }
 
-class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateMixin {
-  double tracksToShuffle = 0.0;
-  double maxTracksToShuffle = 0.0;
-  ShuffleType shuffleType = ShuffleType.shuffleIntoQueue;
+class _ShuffleDialogState extends State<ShuffleDialog>
+    with TickerProviderStateMixin {
   Logger lg = Logger('Shuffler/ShuffleDialog');
   APIUtils apiUtils = GetIt.I<APIUtils>();
 
+  late final ShuffleTool shuffleTool;
+
   Timer? _debounceRecentTracks;
   bool loadingRecentTracks = false;
-  double numOfRecentTracksToRemove = 0.0;
-  int recentTracksFound = 0;
-  Set<Track> recentTracksToRemove = Set.of(List.empty());
   bool playerActive = false;
   late CancelableOperation playerActivationFuture;
 
   @override
   void initState() {
-    tracksToShuffle = 0.5 * widget.playlist.tracks.length;
-    maxTracksToShuffle = widget.playlist.tracks.length.toDouble();
-    playerActivationFuture = CancelableOperation.fromFuture(apiUtils.waitForPlayerActivated()).then((_) {
+    shuffleTool = ShuffleTool.defaultConfig(widget.playlist);
+    playerActivationFuture =
+        CancelableOperation.fromFuture(apiUtils.waitForPlayerActivated())
+            .then((_) {
       //waiting for player will have a minimum delay of 2 seconds. This should be enough for the build process to finish
       if (mounted) {
         setState(() {
@@ -68,7 +66,8 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
         });
       } else {
         //If the building process is still going on, we need to make sure the status updates after it is finished.
-        WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => playerActive = true));
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => setState(() => playerActive = true));
       }
     });
     super.initState();
@@ -120,18 +119,11 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
       if (tracks.length > 80) {
         await Future.delayed(const Duration(milliseconds: 400));
       }
-      await controller.animateTo((i + 1) / tracks.length, duration: const Duration(milliseconds: 50));
+      await controller.animateTo((i + 1) / tracks.length,
+          duration: const Duration(milliseconds: 50));
     }
     if (!controller.isDismissed) controller.dispose();
     lg.info('${tracks.length} Tracks added to queue');
-  }
-
-  Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
-    final Playlist generatedPlaylist =
-        await apiUtils.generatePlaylistIfNotExists(widget.playlist.name, ogPlaylist: widget.playlist.playlistID);
-    await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
-    await Future.delayed(const Duration(seconds: 2));
-    return generatedPlaylist;
   }
 
   Future<void> addTracksToPlaylist(List<Track> tracks) async {
@@ -140,7 +132,8 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           barrierDismissible: false,
           context: context,
           builder: (context) => FutureBuilder(
-              future: generateAndAddToPlaylist(tracks),
+              future:
+                  apiUtils.generateAndAddToPlaylist(widget.playlist, tracks),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return ErrorDialog(errorMessage: snapshot.error.toString());
@@ -148,7 +141,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                   return FutureBuilder(
                       future: playerActivationFuture.value,
                       builder: (context, _) {
-                        return PlayPlaylistDialog(playerActive: playerActive, playlist: snapshot.data as Playlist);
+                        return PlayPlaylistDialog(
+                            playerActive: playerActive,
+                            playlist: snapshot.data as Playlist);
                       });
                 }
                 return const PopScope(
@@ -163,12 +158,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<void> submit(BuildContext context) async {
-    List<Track> toShuffle = widget.playlist.getShuffledTracks()
-      ..removeWhere(
-        (element) => recentTracksToRemove.contains(element),
-      );
-    toShuffle = toShuffle.sublist(0, tracksToShuffle.toInt());
-    if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoQueue) {
+    List<Track> toShuffle = await shuffleTool.shuffle();
+    if (toShuffle.isNotEmpty &&
+        shuffleTool.shuffleAction == ShuffleAction.addToQueue) {
       await addTracksToQueue(toShuffle).then((_) {
         if (context.mounted) {
           showDialog(
@@ -187,11 +179,15 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
         }
       }).catchError((error) {
         if (context.mounted) {
-          showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString()));
+          showDialog(
+              context: context,
+              builder: (context) =>
+                  ErrorDialog(errorMessage: error.toString()));
         }
       });
     }
-    if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
+    if (toShuffle.isNotEmpty &&
+        shuffleTool.shuffleAction == ShuffleAction.addToPlaylist) {
       await addTracksToPlaylist(toShuffle);
     }
     if (context.mounted) Navigator.of(context).pop();
@@ -199,21 +195,13 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
 
   void getRecentTracksToRemove(double value) async {
     _debounceRecentTracks?.cancel();
-    setState(() => (numOfRecentTracksToRemove = value, loadingRecentTracks = true));
+    shuffleTool.numRecentTracksToSearch = value.toInt();
+    shuffleTool.recentTracksFuture
+        .then((_) => setState(() => (loadingRecentTracks = true)));
     _debounceRecentTracks = Timer(const Duration(milliseconds: 800), () async {
-      if (value.toInt() == 0) {
-        recentTracksToRemove.clear();
-      } else {
-        recentTracksToRemove = (await apiUtils.getRecentlyPlayedTracks(numOfRecentTracksToRemove.toInt())).toSet()
-          ..retainWhere((t) => widget.playlist.tracks.contains(t));
-      }
+      await shuffleTool.recentTracksFuture;
       if (mounted) {
-        setState(() => (
-              recentTracksFound = recentTracksToRemove.length,
-              maxTracksToShuffle = widget.playlist.tracks.length.toDouble() - recentTracksFound,
-              tracksToShuffle = min(tracksToShuffle, maxTracksToShuffle),
-              loadingRecentTracks = false,
-            ));
+        setState(() => (loadingRecentTracks = false,));
       }
     });
   }
@@ -246,12 +234,13 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                           child: Slider(
                               key: const Key("recentTracksSlider"),
                               divisions: 5,
-                              value: numOfRecentTracksToRemove,
+                              value: shuffleTool.numRecentTracksToSearch
+                                  .toDouble(),
                               onChanged: getRecentTracksToRemove,
                               min: 0,
                               max: 50),
                         ),
-                        Text(numOfRecentTracksToRemove.toInt().toString()),
+                        Text(shuffleTool.numRecentTracksToSearch.toString()),
                       ],
                     ),
                   ],
@@ -262,7 +251,10 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [const Text("Found Tracks:"), Text(recentTracksFound.toString())],
+                  children: [
+                    const Text("Found Tracks:"),
+                    Text(shuffleTool.numRecentTracksFound.toString())
+                  ],
                 ),
                 if (loadingRecentTracks) const CircularProgressIndicator(),
               ])
@@ -281,9 +273,12 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Switch(
-                      value: shuffleType == ShuffleType.shuffleIntoPlaylist,
-                      onChanged: (value) => setState(
-                          () => shuffleType = value ? ShuffleType.shuffleIntoPlaylist : ShuffleType.shuffleIntoQueue)),
+                      value: shuffleTool.shuffleAction ==
+                          ShuffleAction.addToPlaylist,
+                      onChanged: (value) => setState(() =>
+                          shuffleTool.shuffleAction = value
+                              ? ShuffleAction.addToPlaylist
+                              : ShuffleAction.addToQueue)),
                 ),
                 const Expanded(
                     child: Text(
@@ -294,28 +289,30 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
             ),
           ),
           const SizedBox(height: 20),
-          Text('Number of tracks: ${tracksToShuffle.toInt()}'),
+          Text('Number of tracks: ${shuffleTool.numTracks.toInt()}'),
           Slider(
             key: const Key("NumTracksSlider"),
-            divisions: maxTracksToShuffle.toInt() - 1,
-            value: tracksToShuffle,
+            divisions: shuffleTool.maxTracksToShuffle - 1,
+            value: shuffleTool.numTracks.toDouble(),
             onChanged: (newValue) {
               setState(() {
-                tracksToShuffle = newValue;
+                shuffleTool.numTracks = newValue.toInt();
               });
             },
             min: 0.0,
-            max: maxTracksToShuffle,
+            max: shuffleTool.maxTracksToShuffle.toDouble(),
           ),
           const SizedBox(
             height: 10,
           ),
-          if (!playerActive && shuffleType == ShuffleType.shuffleIntoQueue)
+          if (!playerActive &&
+              shuffleTool.shuffleAction == ShuffleAction.addToQueue)
             const Flexible(
               child: Text(
                 'Make sure you\'re already playing something on spotify before clicking Submit',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+                style:
+                    TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
               ),
             ),
         ],
@@ -328,7 +325,8 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           },
         ),
         TextButton(
-          onPressed: shuffleType == ShuffleType.shuffleIntoQueue && !playerActive
+          onPressed: (shuffleTool.shuffleAction == ShuffleAction.addToQueue &&
+                  !playerActive)
               ? null
               : () async {
                   await submit(context);

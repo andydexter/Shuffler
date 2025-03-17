@@ -417,6 +417,21 @@ class APIUtils {
     lg.info("Added ${tracks.length} tracks to playlist with ID $spotifyID");
   }
 
+/// Generates a playlist if it doesn't exist, then adds tracks to the generated playlist
+/// 
+/// [playlist] is used to specify the playlist to be generated, 
+/// [tracks] is the list of tracks to be added to the generated playlist
+
+/// Returns a [Future] of a [Playlist] that represents the generated playlist.
+Future<Playlist> generateAndAddToPlaylist(Playlist playlist, List<Track> tracks) async {
+    final Playlist generatedPlaylist =
+        await generatePlaylistIfNotExists(playlist.name, ogPlaylist: playlist.playlistID);
+    await addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
+    //await Future.delayed(const Duration(seconds: 2));
+    return generatedPlaylist;
+  }
+
+
   /// Plays a playlist on Spotify.
   /// It then disables shuffle and repeat.
   ///
@@ -561,6 +576,9 @@ class APIClient {
     //Get API credentials from enviroment
     String clientId = const String.fromEnvironment('CLIENT_ID');
     String clientSecret = const String.fromEnvironment('CLIENT_SECRET');
+    if(clientId.isNotEmpty && clientSecret.isNotEmpty){
+        lg.severe("CLIENT_ID and CLIENT_SECRET not found in enviroment");
+    }
     assert(clientId.isNotEmpty && clientSecret.isNotEmpty, 'CLIENT_ID and CLIENT_SECRET must be set in enviroment');
     //Check if refresh token is stored
     if (allowRefresh && await storage.containsKey(key: 'credentials')) {
