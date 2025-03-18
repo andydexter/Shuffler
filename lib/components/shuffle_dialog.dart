@@ -23,6 +23,7 @@ library;
 import 'dart:async';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
@@ -318,6 +319,8 @@ class _ShuffleDialogState extends State<ShuffleDialog>
         ],
       ),
       actions: <Widget>[
+      TextButton(onPressed: shuffleTool.clearDefaultSettings, child: const Text('Clear Default Settings', softWrap: true,)),
+        TextButton(onPressed: shuffleTool.saveDefaultSettings, child: const Text('Save Default Settings ', softWrap: true,)),
         TextButton(
           child: const Text('Cancel'),
           onPressed: () {
