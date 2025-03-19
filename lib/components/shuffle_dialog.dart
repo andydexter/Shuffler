@@ -23,7 +23,6 @@ library;
 import 'dart:async';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
@@ -99,10 +98,14 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                   onCancel: () => cancel = true),
             ));
     lg.info('ProgressDialog shown');
+    // TODO rewrite this bullshit
     for (int i = 0; i < tracks.length; i++) {
       //If aborted by user, dismiss controller and stop.
       if (cancel) {
-        if (!controller.isDismissed) controller.dispose();
+        if (!controller.isDismissed) {
+          lg.info("Disposing Progress Controller");
+          controller.dispose();
+        }
         lg.info('Cancelled adding tracks to queue');
         return;
       }
@@ -261,36 +264,8 @@ class _ShuffleDialogState extends State<ShuffleDialog>
               ])
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Expanded(
-                    child: Text(
-                  'Shuffle into queue',
-                  textAlign: TextAlign.center,
-                )),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Switch(
-                      value: shuffleTool.shuffleAction ==
-                          ShuffleAction.addToPlaylist,
-                      onChanged: (value) => setState(() =>
-                          shuffleTool.shuffleAction = value
-                              ? ShuffleAction.addToPlaylist
-                              : ShuffleAction.addToQueue)),
-                ),
-                const Expanded(
-                    child: Text(
-                  'Shuffle into playlist',
-                  textAlign: TextAlign.center,
-                )),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
-          Text('Number of tracks: ${shuffleTool.numTracks.toInt()}'),
+          Text('Number of tracks to shuffle: ${shuffleTool.numTracks.toInt()}'),
           Slider(
             key: const Key("NumTracksSlider"),
             divisions: shuffleTool.maxTracksToShuffle - 1,
@@ -302,6 +277,30 @@ class _ShuffleDialogState extends State<ShuffleDialog>
             },
             min: 0.0,
             max: shuffleTool.maxTracksToShuffle.toDouble(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: SegmentedButton<ShuffleAction>(segments: const <ButtonSegment<ShuffleAction>>[
+                    ButtonSegment<ShuffleAction>(
+                      value: ShuffleAction.addToQueue, 
+                      label: Text("Shuffle Into Queue", softWrap: true,), 
+                      icon: Icon(Icons.queue)),
+                    ButtonSegment<ShuffleAction>(
+                      value: ShuffleAction.addToPlaylist, 
+                      label: Text("Shuffle Into Playlist", softWrap: true,), 
+                      icon: Icon(Icons.featured_play_list)),
+                      ], 
+                    selected: <ShuffleAction>{shuffleTool.shuffleAction},
+                  onSelectionChanged: (Set<ShuffleAction> newSelection){
+                    setState(() => shuffleTool.shuffleAction = newSelection.first);
+                  },),
+                )],
+            ),
           ),
           const SizedBox(
             height: 10,
