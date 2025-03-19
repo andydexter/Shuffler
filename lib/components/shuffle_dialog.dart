@@ -88,36 +88,25 @@ class _ShuffleDialogState extends State<ShuffleDialog>
     showDialog(
         barrierDismissible: false,
         context: context,
-        builder: (context) => PopScope(
-              canPop: false,
-              child: ProgressDialog(
-                  message: 'Adding tracks to queue...',
-                  controller: controller,
-                  context: context,
-                  upperBound: tracks.length,
-                  onCancel: () => cancel = true),
-            ));
+        builder: (context) => ProgressDialog(
+            message: 'Adding tracks to queue...',
+            controller: controller,
+            context: context,
+            upperBound: tracks.length,
+            onCancel: () => cancel = true));
     lg.info('ProgressDialog shown');
-    // TODO rewrite this bullshit
-    for (int i = 0; i < tracks.length; i++) {
+    String? error;
+    int i = 0;
+    for (i = 0; i < tracks.length; i++) {
       //If aborted by user, dismiss controller and stop.
       if (cancel) {
-        if (!controller.isDismissed) {
-          lg.info("Disposing Progress Controller");
-          controller.dispose();
-        }
         lg.info('Cancelled adding tracks to queue');
-        return;
+        break;
       }
-      //Add track to queue. If error, dismiss controller and return error.
-      String error = '';
-      await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) {
-        if (!controller.isDismissed) controller.dispose();
-        error = errorMsg;
-      });
-      if (error.isNotEmpty) {
-        lg.severe("Add Track to queue error: $error");
-        return Future.error(error);
+      //Add track to queue. If error, set error string.
+      await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) => error = errorMsg);
+      if (error != null) {
+        break;
       }
       // Delay to avoid rate limiting
       if (tracks.length > 80) {
@@ -127,7 +116,12 @@ class _ShuffleDialogState extends State<ShuffleDialog>
           duration: const Duration(milliseconds: 50));
     }
     if (!controller.isDismissed) controller.dispose();
-    lg.info('${tracks.length} Tracks added to queue');
+    if(mounted) Navigator.of(context).pop();
+    if(error != null){
+      lg.severe("Error when adding tracks to queue: $error");
+      return Future.error(error!);
+    }
+    lg.info('$i/${tracks.length} Tracks added to queue');
   }
 
   Future<void> addTracksToPlaylist(List<Track> tracks) async {
