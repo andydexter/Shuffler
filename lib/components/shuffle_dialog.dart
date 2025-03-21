@@ -56,14 +56,17 @@ class _ShuffleDialogState extends State<ShuffleDialog>
   @override
   void initState() {
     shuffleTool = ShuffleTool.defaultConfig(widget.playlist);
+    if (shuffleTool.numRecentTracksToSearch > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) =>
+          getRecentTracksToRemove(
+              shuffleTool.numRecentTracksToSearch.toDouble()));
+    }
     playerActivationFuture =
         CancelableOperation.fromFuture(apiUtils.waitForPlayerActivated())
             .then((_) {
       //waiting for player will have a minimum delay of 2 seconds. This should be enough for the build process to finish
       if (mounted) {
-        setState(() {
-          playerActive = true;
-        });
+        setState(() => playerActive = true);
       } else {
         //If the building process is still going on, we need to make sure the status updates after it is finished.
         WidgetsBinding.instance
@@ -104,7 +107,9 @@ class _ShuffleDialogState extends State<ShuffleDialog>
         break;
       }
       //Add track to queue. If error, set error string.
-      await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) => error = errorMsg);
+      await apiUtils
+          .addTrackToQueue(tracks[i])
+          .catchError((errorMsg) => error = errorMsg);
       if (error != null) {
         break;
       }
@@ -116,8 +121,8 @@ class _ShuffleDialogState extends State<ShuffleDialog>
           duration: const Duration(milliseconds: 50));
     }
     if (!controller.isDismissed) controller.dispose();
-    if(mounted) Navigator.of(context).pop();
-    if(error != null){
+    if (mounted) Navigator.of(context).pop();
+    if (error != null) {
       lg.severe("Error when adding tracks to queue: $error");
       return Future.error(error!);
     }
@@ -214,6 +219,24 @@ class _ShuffleDialogState extends State<ShuffleDialog>
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Flexible(
+            child: Center(
+              child: SegmentedButton<RecentTrackAction>(
+                segments: const [
+                  ButtonSegment<RecentTrackAction>(
+                      value: RecentTrackAction.none, label: Text("None"), icon: Icon(Icons.block)),
+                  ButtonSegment<RecentTrackAction>(
+                      value: RecentTrackAction.exclude, label: Text("Ommit"), icon: Icon(Icons.cancel)),
+                  ButtonSegment<RecentTrackAction>(
+                      value: RecentTrackAction.moveToEnd,
+                      label: Text("Move to End"), icon: Icon(Icons.last_page)),
+                ],
+                selected: <RecentTrackAction>{shuffleTool.recentTrackAction},
+                onSelectionChanged: (newSelection) =>
+                    setState(() => shuffleTool.recentTrackAction = newSelection.first),
+              ),
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -234,7 +257,7 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                               divisions: 5,
                               value: shuffleTool.numRecentTracksToSearch
                                   .toDouble(),
-                              onChanged: getRecentTracksToRemove,
+                              onChanged: shuffleTool.recentTrackAction == RecentTrackAction.none ? null : getRecentTracksToRemove,
                               min: 0,
                               max: 50),
                         ),
@@ -244,7 +267,6 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                   ],
                 ),
               ),
-              const SizedBox(width: 20),
               Stack(alignment: AlignmentDirectional.center, children: [
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -258,7 +280,6 @@ class _ShuffleDialogState extends State<ShuffleDialog>
               ])
             ],
           ),
-          const SizedBox(height: 20),
           Text('Number of tracks to shuffle: ${shuffleTool.numTracks.toInt()}'),
           Slider(
             key: const Key("NumTracksSlider"),
@@ -279,25 +300,32 @@ class _ShuffleDialogState extends State<ShuffleDialog>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Flexible(
-                  child: SegmentedButton<ShuffleAction>(segments: const <ButtonSegment<ShuffleAction>>[
-                    ButtonSegment<ShuffleAction>(
-                      value: ShuffleAction.addToQueue, 
-                      label: Text("Shuffle Into Queue", softWrap: true,), 
-                      icon: Icon(Icons.queue)),
-                    ButtonSegment<ShuffleAction>(
-                      value: ShuffleAction.addToPlaylist, 
-                      label: Text("Shuffle Into Playlist", softWrap: true,), 
-                      icon: Icon(Icons.featured_play_list)),
-                      ], 
+                  child: SegmentedButton<ShuffleAction>(
+                    segments: const <ButtonSegment<ShuffleAction>>[
+                      ButtonSegment<ShuffleAction>(
+                          value: ShuffleAction.addToQueue,
+                          label: Text(
+                            "Shuffle Into Queue",
+                            softWrap: true,
+                          ),
+                          icon: Icon(Icons.queue)),
+                      ButtonSegment<ShuffleAction>(
+                          value: ShuffleAction.addToPlaylist,
+                          label: Text(
+                            "Shuffle Into Playlist",
+                            softWrap: true,
+                          ),
+                          icon: Icon(Icons.featured_play_list)),
+                    ],
                     selected: <ShuffleAction>{shuffleTool.shuffleAction},
-                  onSelectionChanged: (Set<ShuffleAction> newSelection){
-                    setState(() => shuffleTool.shuffleAction = newSelection.first);
-                  },),
-                )],
+                    onSelectionChanged: (Set<ShuffleAction> newSelection) {
+                      setState(
+                          () => shuffleTool.shuffleAction = newSelection.first);
+                    },
+                  ),
+                )
+              ],
             ),
-          ),
-          const SizedBox(
-            height: 10,
           ),
           if (!playerActive &&
               shuffleTool.shuffleAction == ShuffleAction.addToQueue)
@@ -312,8 +340,18 @@ class _ShuffleDialogState extends State<ShuffleDialog>
         ],
       ),
       actions: <Widget>[
-      TextButton(onPressed: shuffleTool.clearDefaultSettings, child: const Text('Clear Default Settings', softWrap: true,)),
-        TextButton(onPressed: shuffleTool.saveDefaultSettings, child: const Text('Save Default Settings ', softWrap: true,)),
+        TextButton(
+            onPressed: shuffleTool.clearDefaultSettings,
+            child: const Text(
+              'Clear Default Settings',
+              softWrap: true,
+            )),
+        TextButton(
+            onPressed: shuffleTool.saveDefaultSettings,
+            child: const Text(
+              'Save Default Settings ',
+              softWrap: true,
+            )),
         TextButton(
           child: const Text('Cancel'),
           onPressed: () {
@@ -375,4 +413,3 @@ class PlayPlaylistDialog extends StatelessWidget {
   }
 }
 
-enum ShuffleType { shuffleIntoQueue, shuffleIntoPlaylist }
