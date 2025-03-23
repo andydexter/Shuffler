@@ -502,18 +502,22 @@ Future<Playlist> generateAndAddToPlaylist(Playlist playlist, List<Track> tracks)
     );
   }
 
+  /// Returns void when an active player is detected, or when timout (see [maxAttempts])
+  /// Consider calling with [CancellableOperation] as the function itself has no other means of terminating 
   Future<void> waitForPlayerActivated() async {
     Response response;
     int responseStatus = 204;
     int attempts = 0;
+    const int maxAttempts = 120; // 4 minutes
+    const int delayTweenAttempts = 2; // seconds
     lg.info('Started polling playback state');
     try {
       do {
         response = await client.get(Uri.parse('https://api.spotify.com/v1/me/player'));
         responseStatus = response.statusCode;
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(seconds: delayTweenAttempts));
         attempts++;
-      } while (responseStatus != 200 && attempts < 60);
+      } while (responseStatus != 200 && attempts < maxAttempts);
     } on SocketException catch (_, e) {
       lg.severe(e.toString());
     }

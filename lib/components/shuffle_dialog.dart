@@ -223,140 +223,165 @@ class _ShuffleDialogState extends State<ShuffleDialog>
             trackHeight: 10,
             activeTrackColor: Theme.of(context).colorScheme.primaryContainer,
             thumbColor: Theme.of(context).colorScheme.onPrimaryContainer,
-            thumbShape: RectangularSliderThumbShape(borderColor: Theme.of(context).colorScheme.onPrimaryFixedVariant)),
+            thumbShape: RectangularSliderThumbShape(
+                borderColor:
+                    Theme.of(context).colorScheme.onPrimaryFixedVariant)),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          spacing: 5,
+          spacing: 5.0,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                spacing: 10.0,
-                children: [
-                  Flexible(
-                    child: Column(
-                      children: [
-                        const Text(
-                          "Number of recent tracks to search:",
-                          textAlign: TextAlign.center,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Slider(
-                                  key: const Key("recentTracksSlider"),
-                                  divisions: 5,
-                                  value: shuffleTool.numRecentTracksToSearch
-                                      .toDouble(),
-                                  onChanged: shuffleTool.recentTrackAction ==
-                                          RecentTrackAction.none
-                                      ? null
-                                      : getRecentTracksToRemove,
-                                  min: 0,
-                                  max: 50),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  spacing: 5,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 10.0,
+                        children: [
+                          Flexible(
+                            child: Column(
+                              children: [
+                                const Text(
+                                  "Number of recent tracks to search:",
+                                  textAlign: TextAlign.center,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Slider(
+                                          key: const Key("recentTracksSlider"),
+                                          divisions: 5,
+                                          value: shuffleTool
+                                              .numRecentTracksToSearch
+                                              .toDouble(),
+                                          onChanged:
+                                              shuffleTool.recentTrackAction ==
+                                                      RecentTrackAction.none
+                                                  ? null
+                                                  : getRecentTracksToRemove,
+                                          min: 0,
+                                          max: 50),
+                                    ),
+                                    Text(shuffleTool.numRecentTracksToSearch
+                                        .toString()),
+                                  ],
+                                ),
+                              ],
                             ),
-                            Text(shuffleTool.numRecentTracksToSearch.toString()),
-                          ],
+                          ),
+                          Stack(
+                              alignment: AlignmentDirectional.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const Text("Found Tracks:"),
+                                    Text(shuffleTool.numRecentTracksFound
+                                        .toString())
+                                  ],
+                                ),
+                                if (loadingRecentTracks)
+                                  const CircularProgressIndicator(),
+                              ])
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      child: SegmentedButton<RecentTrackAction>(
+                        segments: const [
+                          ButtonSegment<RecentTrackAction>(
+                              value: RecentTrackAction.none,
+                              label: Text("None"),
+                              icon: Icon(Icons.block)),
+                          ButtonSegment<RecentTrackAction>(
+                              value: RecentTrackAction.exclude,
+                              label: Text("Ommit"),
+                              icon: Icon(Icons.cancel)),
+                          ButtonSegment<RecentTrackAction>(
+                              value: RecentTrackAction.moveToEnd,
+                              label: Text("Move to End"),
+                              icon: Icon(Icons.last_page)),
+                        ],
+                        selected: <RecentTrackAction>{
+                          shuffleTool.recentTrackAction
+                        },
+                        onSelectionChanged: (newSelection) => setState(() =>
+                            shuffleTool.recentTrackAction = newSelection.first),
+                      ),
+                    ),
+                    Divider(),
+                    Column(
+                      children: [
+                        Text(
+                            'Number of tracks to shuffle: ${shuffleTool.numTracks}/${shuffleTool.maxTracksToShuffle}'),
+                        Slider(
+                          key: const Key("NumTracksSlider"),
+                          divisions: shuffleTool.maxTracksToShuffle - 1,
+                          value: shuffleTool.numTracks.toDouble(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              shuffleTool.numTracks = newValue.toInt();
+                            });
+                          },
+                          min: 0.0,
+                          max: shuffleTool.maxTracksToShuffle.toDouble(),
                         ),
                       ],
                     ),
-                  ),
-                  Stack(alignment: AlignmentDirectional.center, children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text("Found Tracks:"),
-                        Text(shuffleTool.numRecentTracksFound.toString())
+                        Flexible(
+                          child: SegmentedButton<ShuffleAction>(
+                            segments: const <ButtonSegment<ShuffleAction>>[
+                              ButtonSegment<ShuffleAction>(
+                                  value: ShuffleAction.addToQueue,
+                                  label: Text(
+                                    "Shuffle Into Queue",
+                                    softWrap: true,
+                                  ),
+                                  icon: Icon(Icons.queue)),
+                              ButtonSegment<ShuffleAction>(
+                                  value: ShuffleAction.addToPlaylist,
+                                  label: Text(
+                                    "Shuffle Into Playlist",
+                                    softWrap: true,
+                                  ),
+                                  icon: Icon(Icons.featured_play_list)),
+                            ],
+                            selected: <ShuffleAction>{shuffleTool.shuffleAction},
+                            onSelectionChanged:
+                                (Set<ShuffleAction> newSelection) {
+                              setState(() =>
+                                  shuffleTool.shuffleAction = newSelection.first);
+                            },
+                          ),
+                        )
                       ],
                     ),
-                    if (loadingRecentTracks) const CircularProgressIndicator(),
-                  ])
-                ],
-              ),
-            ),
-            Flexible(
-              child: SegmentedButton<RecentTrackAction>(
-                segments: const [
-                  ButtonSegment<RecentTrackAction>(
-                      value: RecentTrackAction.none,
-                      label: Text("None"),
-                      icon: Icon(Icons.block)),
-                  ButtonSegment<RecentTrackAction>(
-                      value: RecentTrackAction.exclude,
-                      label: Text("Ommit"),
-                      icon: Icon(Icons.cancel)),
-                  ButtonSegment<RecentTrackAction>(
-                      value: RecentTrackAction.moveToEnd,
-                      label: Text("Move to End"),
-                      icon: Icon(Icons.last_page)),
-                ],
-                selected: <RecentTrackAction>{shuffleTool.recentTrackAction},
-                onSelectionChanged: (newSelection) => setState(
-                    () => shuffleTool.recentTrackAction = newSelection.first),
-              ),
-            ),
-            Divider(),
-            Column(
-              children: [
-                Text(
-                    'Number of tracks to shuffle: ${shuffleTool.numTracks}/${shuffleTool.maxTracksToShuffle}'),
-                Slider(
-                  key: const Key("NumTracksSlider"),
-                  divisions: shuffleTool.maxTracksToShuffle - 1,
-                  value: shuffleTool.numTracks.toDouble(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      shuffleTool.numTracks = newValue.toInt();
-                    });
-                  },
-                  min: 0.0,
-                  max: shuffleTool.maxTracksToShuffle.toDouble(),
+                  ],
                 ),
-              ],
-            ),
-            Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: SegmentedButton<ShuffleAction>(
-                    segments: const <ButtonSegment<ShuffleAction>>[
-                      ButtonSegment<ShuffleAction>(
-                          value: ShuffleAction.addToQueue,
-                          label: Text(
-                            "Shuffle Into Queue",
-                            softWrap: true,
-                          ),
-                          icon: Icon(Icons.queue)),
-                      ButtonSegment<ShuffleAction>(
-                          value: ShuffleAction.addToPlaylist,
-                          label: Text(
-                            "Shuffle Into Playlist",
-                            softWrap: true,
-                          ),
-                          icon: Icon(Icons.featured_play_list)),
-                    ],
-                    selected: <ShuffleAction>{shuffleTool.shuffleAction},
-                    onSelectionChanged: (Set<ShuffleAction> newSelection) {
-                      setState(
-                          () => shuffleTool.shuffleAction = newSelection.first);
-                    },
-                  ),
-                )
-              ],
+              ),
             ),
             if (!playerActive &&
                 shuffleTool.shuffleAction == ShuffleAction.addToQueue)
               const Flexible(
                 child: Text(
-                  'Make sure you\'re already playing something on spotify before clicking Submit',
+                  'Make sure you\'re already playing something on spotify',
                   textAlign: TextAlign.center,
                   style:
                       TextStyle(color: Colors.red, fontStyle: FontStyle.italic),

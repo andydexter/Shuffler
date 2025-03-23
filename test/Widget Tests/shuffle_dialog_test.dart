@@ -217,7 +217,7 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Make sure you\'re already playing something on spotify before clicking Submit'), findsOneWidget);
+    expect(find.text('Make sure you\'re already playing something on spotify'), findsOneWidget);
     expect(
         (find.ancestor(of: find.text('Submit'), matching: find.byType(TextButton)).evaluate().single.widget
                 as TextButton)
