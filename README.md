@@ -40,6 +40,8 @@ The dropdown menu accessible from the Home Page App Bar contains a `Change Theme
 
 > This app does not work on web at the moment.
 
+Start by running `flutter pub get` followed by `dart run build_runner build` to generate the required files (mostly for the database and test mocks).
+
 Spotify API app credentials are read from the enviroment variables `CLIENT_ID` and `CLIENT_SECRET`. When running or building the app make sure to include these variables with your own API keys by using `--dart-define` or `--dart-define-from-file`.
 
 The committed VS Code launch and build configurations use `--dart-define-from-file APICredentials.json` where `APICredentials.json` is located in project root.
