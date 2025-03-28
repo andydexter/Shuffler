@@ -417,6 +417,21 @@ class APIUtils {
     lg.info("Added ${tracks.length} tracks to playlist with ID $spotifyID");
   }
 
+/// Generates a playlist if it doesn't exist, then adds tracks to the generated playlist
+/// 
+/// [playlist] is used to specify the playlist to be generated, 
+/// [tracks] is the list of tracks to be added to the generated playlist
+
+/// Returns a [Future] of a [Playlist] that represents the generated playlist.
+Future<Playlist> generateAndAddToPlaylist(Playlist playlist, List<Track> tracks) async {
+    final Playlist generatedPlaylist =
+        await generatePlaylistIfNotExists(playlist.name, ogPlaylist: playlist.playlistID);
+    await addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
+    //await Future.delayed(const Duration(seconds: 2));
+    return generatedPlaylist;
+  }
+
+
   /// Plays a playlist on Spotify.
   /// It then disables shuffle and repeat.
   ///
@@ -487,18 +502,22 @@ class APIUtils {
     );
   }
 
+  /// Returns void when an active player is detected, or when timout (see [maxAttempts])
+  /// Consider calling with [CancellableOperation] as the function itself has no other means of terminating 
   Future<void> waitForPlayerActivated() async {
     Response response;
     int responseStatus = 204;
     int attempts = 0;
+    const int maxAttempts = 120; // 4 minutes
+    const int delayTweenAttempts = 2; // seconds
     lg.info('Started polling playback state');
     try {
       do {
         response = await client.get(Uri.parse('https://api.spotify.com/v1/me/player'));
         responseStatus = response.statusCode;
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(seconds: delayTweenAttempts));
         attempts++;
-      } while (responseStatus != 200 && attempts < 60);
+      } while (responseStatus != 200 && attempts < maxAttempts);
     } on SocketException catch (_, e) {
       lg.severe(e.toString());
     }
@@ -561,6 +580,9 @@ class APIClient {
     //Get API credentials from enviroment
     String clientId = const String.fromEnvironment('CLIENT_ID');
     String clientSecret = const String.fromEnvironment('CLIENT_SECRET');
+    if(clientId.isNotEmpty && clientSecret.isNotEmpty){
+        lg.severe("CLIENT_ID and CLIENT_SECRET not found in enviroment");
+    }
     assert(clientId.isNotEmpty && clientSecret.isNotEmpty, 'CLIENT_ID and CLIENT_SECRET must be set in enviroment');
     //Check if refresh token is stored
     if (allowRefresh && await storage.containsKey(key: 'credentials')) {

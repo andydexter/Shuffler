@@ -19,7 +19,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.3.0+1
 
 environment:
-  sdk: '>=3.3.4 <4.0.0'
+  sdk: '>=3.7.2 <4.0.0'
+  flutter: '>=3.29.0 < 4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -34,33 +35,24 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.6
   oauth2: ^2.0.2
   url_launcher: ^6.3.0
-  app_links: ^6.1.1
   get_it: ^8.0.3
   http: ^1.2.1
-  flutter_secure_storage: ^9.2.2
-  drift: ^2.18.0
+  flutter_secure_storage: ^9.2.4
+  drift: ^2.26.0
   sqlite3_flutter_libs: ^0.5.0
-  sqlite3: ^2.2.0
+  sqlite3: ^2.7.5
   path_provider: ^2.0.0
   path: ^1.9.0
-  simple_loading_dialog: ^1.0.0
   shared_preferences: ^2.2.3
   flutter_colorpicker: ^1.1.0
   logging: ^1.2.0
   package_info_plus: ^8.0.0
-  leak_tracker: ^10.0.8
-  leak_tracker_flutter_testing: ^3.0.9
-  material_color_utilities: '>=0.8.0 <=0.12.0'
-  meta: ^1.16.0
-  test_api: ^0.7.0
-  vm_service: ^14.2.1
   html_unescape: ^2.0.0
-  async: ^2.11.0
+  async: ^2.12.0
   image: ^4.2.0
-  foundation: ^0.0.5
+  dependency_validator: ^5.0.2
 
 
 dev_dependencies:
@@ -73,11 +65,13 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  drift_dev: ^2.18.0
+  drift_dev: ^2.26.0
   build_runner: ^2.4.9
-  mockito: ^5.4.4
+  mockito: ^5.4.5
   flutter_launcher_icons: ^0.14.3
   rename_app: ^1.6.1
+  leak_tracker: ^10.0.8
+  leak_tracker_flutter_testing: ^3.0.9
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

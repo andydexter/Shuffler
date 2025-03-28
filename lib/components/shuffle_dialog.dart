@@ -21,15 +21,17 @@
 library;
 
 import 'dart:async';
-import 'dart:math';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logging/logging.dart';
 import 'package:shuffler/api_utils.dart';
 import 'package:shuffler/components/error_dialog.dart';
+import 'package:shuffler/components/play_playlist_dialog.dart';
+import 'package:shuffler/components/rectangular_slider_thumb_shape.dart';
 import 'package:shuffler/data_objects/playlist.dart';
 import 'package:shuffler/components/progress_dialog.dart';
+import 'package:shuffler/data_objects/shuffle_tool.dart';
 import 'package:shuffler/data_objects/track.dart';
 
 class ShuffleDialog extends StatefulWidget {
@@ -41,34 +43,36 @@ class ShuffleDialog extends StatefulWidget {
   State<ShuffleDialog> createState() => _ShuffleDialogState();
 }
 
-class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateMixin {
-  double tracksToShuffle = 0.0;
-  double maxTracksToShuffle = 0.0;
-  ShuffleType shuffleType = ShuffleType.shuffleIntoQueue;
+class _ShuffleDialogState extends State<ShuffleDialog>
+    with TickerProviderStateMixin {
   Logger lg = Logger('Shuffler/ShuffleDialog');
   APIUtils apiUtils = GetIt.I<APIUtils>();
 
+  late final ShuffleTool shuffleTool;
+
   Timer? _debounceRecentTracks;
   bool loadingRecentTracks = false;
-  double numOfRecentTracksToRemove = 0.0;
-  int recentTracksFound = 0;
-  Set<Track> recentTracksToRemove = Set.of(List.empty());
   bool playerActive = false;
   late CancelableOperation playerActivationFuture;
 
   @override
   void initState() {
-    tracksToShuffle = 0.5 * widget.playlist.tracks.length;
-    maxTracksToShuffle = widget.playlist.tracks.length.toDouble();
-    playerActivationFuture = CancelableOperation.fromFuture(apiUtils.waitForPlayerActivated()).then((_) {
+    shuffleTool = ShuffleTool.defaultConfig(widget.playlist);
+    if (shuffleTool.numRecentTracksToSearch > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) =>
+          getRecentTracksToRemove(
+              shuffleTool.numRecentTracksToSearch.toDouble()));
+    }
+    playerActivationFuture =
+        CancelableOperation.fromFuture(apiUtils.waitForPlayerActivated())
+            .then((_) {
       //waiting for player will have a minimum delay of 2 seconds. This should be enough for the build process to finish
       if (mounted) {
-        setState(() {
-          playerActive = true;
-        });
+        setState(() => playerActive = true);
       } else {
         //If the building process is still going on, we need to make sure the status updates after it is finished.
-        WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => playerActive = true));
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => setState(() => playerActive = true));
       }
     });
     super.initState();
@@ -89,49 +93,42 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     showDialog(
         barrierDismissible: false,
         context: context,
-        builder: (context) => PopScope(
-              canPop: false,
-              child: ProgressDialog(
-                  message: 'Adding tracks to queue...',
-                  controller: controller,
-                  context: context,
-                  upperBound: tracks.length,
-                  onCancel: () => cancel = true),
-            ));
+        builder: (context) => ProgressDialog(
+            message: 'Adding tracks to queue...',
+            controller: controller,
+            context: context,
+            upperBound: tracks.length,
+            onCancel: () => cancel = true));
     lg.info('ProgressDialog shown');
-    for (int i = 0; i < tracks.length; i++) {
+    String? error;
+    int i = 0;
+    for (i = 0; i < tracks.length; i++) {
       //If aborted by user, dismiss controller and stop.
       if (cancel) {
-        if (!controller.isDismissed) controller.dispose();
         lg.info('Cancelled adding tracks to queue');
-        return;
+        break;
       }
-      //Add track to queue. If error, dismiss controller and return error.
-      String error = '';
-      await apiUtils.addTrackToQueue(tracks[i]).catchError((errorMsg) {
-        if (!controller.isDismissed) controller.dispose();
-        error = errorMsg;
-      });
-      if (error.isNotEmpty) {
-        lg.severe("Add Track to queue error: $error");
-        return Future.error(error);
+      //Add track to queue. If error, set error string.
+      await apiUtils
+          .addTrackToQueue(tracks[i])
+          .catchError((errorMsg) => error = errorMsg);
+      if (error != null) {
+        break;
       }
       // Delay to avoid rate limiting
       if (tracks.length > 80) {
         await Future.delayed(const Duration(milliseconds: 400));
       }
-      await controller.animateTo((i + 1) / tracks.length, duration: const Duration(milliseconds: 50));
+      await controller.animateTo((i + 1) / tracks.length,
+          duration: const Duration(milliseconds: 50));
     }
     if (!controller.isDismissed) controller.dispose();
-    lg.info('${tracks.length} Tracks added to queue');
-  }
-
-  Future<Playlist> generateAndAddToPlaylist(List<Track> tracks) async {
-    final Playlist generatedPlaylist =
-        await apiUtils.generatePlaylistIfNotExists(widget.playlist.name, ogPlaylist: widget.playlist.playlistID);
-    await apiUtils.addTracksToGeneratedPlaylist(generatedPlaylist.playlistID, tracks);
-    await Future.delayed(const Duration(seconds: 2));
-    return generatedPlaylist;
+    if (mounted) Navigator.of(context).pop();
+    if (error != null) {
+      lg.severe("Error when adding tracks to queue: $error");
+      return Future.error(error!);
+    }
+    lg.info('$i/${tracks.length} Tracks added to queue');
   }
 
   Future<void> addTracksToPlaylist(List<Track> tracks) async {
@@ -140,7 +137,8 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           barrierDismissible: false,
           context: context,
           builder: (context) => FutureBuilder(
-              future: generateAndAddToPlaylist(tracks),
+              future:
+                  apiUtils.generateAndAddToPlaylist(widget.playlist, tracks),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return ErrorDialog(errorMessage: snapshot.error.toString());
@@ -148,7 +146,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
                   return FutureBuilder(
                       future: playerActivationFuture.value,
                       builder: (context, _) {
-                        return PlayPlaylistDialog(playerActive: playerActive, playlist: snapshot.data as Playlist);
+                        return PlayPlaylistDialog(
+                            playerActive: playerActive,
+                            playlist: snapshot.data as Playlist);
                       });
                 }
                 return const PopScope(
@@ -163,12 +163,9 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
   }
 
   Future<void> submit(BuildContext context) async {
-    List<Track> toShuffle = widget.playlist.getShuffledTracks()
-      ..removeWhere(
-        (element) => recentTracksToRemove.contains(element),
-      );
-    toShuffle = toShuffle.sublist(0, tracksToShuffle.toInt());
-    if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoQueue) {
+    List<Track> toShuffle = await shuffleTool.shuffle();
+    if (toShuffle.isNotEmpty &&
+        shuffleTool.shuffleAction == ShuffleAction.addToQueue) {
       await addTracksToQueue(toShuffle).then((_) {
         if (context.mounted) {
           showDialog(
@@ -187,11 +184,15 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
         }
       }).catchError((error) {
         if (context.mounted) {
-          showDialog(context: context, builder: (context) => ErrorDialog(errorMessage: error.toString()));
+          showDialog(
+              context: context,
+              builder: (context) =>
+                  ErrorDialog(errorMessage: error.toString()));
         }
       });
     }
-    if (tracksToShuffle > 0 && shuffleType == ShuffleType.shuffleIntoPlaylist) {
+    if (toShuffle.isNotEmpty &&
+        shuffleTool.shuffleAction == ShuffleAction.addToPlaylist) {
       await addTracksToPlaylist(toShuffle);
     }
     if (context.mounted) Navigator.of(context).pop();
@@ -199,21 +200,13 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
 
   void getRecentTracksToRemove(double value) async {
     _debounceRecentTracks?.cancel();
-    setState(() => (numOfRecentTracksToRemove = value, loadingRecentTracks = true));
+    shuffleTool.numRecentTracksToSearch = value.toInt();
+    shuffleTool.recentTracksFuture
+        .then((_) => setState(() => (loadingRecentTracks = true)));
     _debounceRecentTracks = Timer(const Duration(milliseconds: 800), () async {
-      if (value.toInt() == 0) {
-        recentTracksToRemove.clear();
-      } else {
-        recentTracksToRemove = (await apiUtils.getRecentlyPlayedTracks(numOfRecentTracksToRemove.toInt())).toSet()
-          ..retainWhere((t) => widget.playlist.tracks.contains(t));
-      }
+      await shuffleTool.recentTracksFuture;
       if (mounted) {
-        setState(() => (
-              recentTracksFound = recentTracksToRemove.length,
-              maxTracksToShuffle = widget.playlist.tracks.length.toDouble() - recentTracksFound,
-              tracksToShuffle = min(tracksToShuffle, maxTracksToShuffle),
-              loadingRecentTracks = false,
-            ));
+        setState(() => (loadingRecentTracks = false,));
       }
     });
   }
@@ -225,102 +218,191 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
         'Shuffle Playlist',
         textAlign: TextAlign.center,
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Flexible(
+      content: SliderTheme(
+        data: SliderThemeData(
+            trackHeight: 10,
+            activeTrackColor: Theme.of(context).colorScheme.primaryContainer,
+            thumbColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            thumbShape: RectangularSliderThumbShape(
+                borderColor:
+                    Theme.of(context).colorScheme.onPrimaryFixedVariant)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          spacing: 5.0,
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  spacing: 5,
                   children: [
-                    const Text(
-                      "Number of recent tracks to search:",
-                      textAlign: TextAlign.center,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 10.0,
+                        children: [
+                          Flexible(
+                            child: Column(
+                              children: [
+                                const Text(
+                                  "Number of recent tracks to search:",
+                                  textAlign: TextAlign.center,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Slider(
+                                          key: const Key("recentTracksSlider"),
+                                          divisions: 5,
+                                          value: shuffleTool
+                                              .numRecentTracksToSearch
+                                              .toDouble(),
+                                          onChanged:
+                                              shuffleTool.recentTrackAction ==
+                                                      RecentTrackAction.none
+                                                  ? null
+                                                  : getRecentTracksToRemove,
+                                          min: 0,
+                                          max: 50),
+                                    ),
+                                    Text(shuffleTool.numRecentTracksToSearch
+                                        .toString()),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Stack(
+                              alignment: AlignmentDirectional.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const Text("Found Tracks:"),
+                                    Text(shuffleTool.numRecentTracksFound
+                                        .toString())
+                                  ],
+                                ),
+                                if (loadingRecentTracks)
+                                  const CircularProgressIndicator(),
+                              ])
+                        ],
+                      ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Flexible(
+                      child: SegmentedButton<RecentTrackAction>(
+                        segments: const [
+                          ButtonSegment<RecentTrackAction>(
+                              value: RecentTrackAction.none,
+                              label: Text("None"),
+                              icon: Icon(Icons.block)),
+                          ButtonSegment<RecentTrackAction>(
+                              value: RecentTrackAction.exclude,
+                              label: Text("Ommit"),
+                              icon: Icon(Icons.cancel)),
+                          ButtonSegment<RecentTrackAction>(
+                              value: RecentTrackAction.moveToEnd,
+                              label: Text("Move to End"),
+                              icon: Icon(Icons.last_page)),
+                        ],
+                        selected: <RecentTrackAction>{
+                          shuffleTool.recentTrackAction
+                        },
+                        onSelectionChanged: (newSelection) => setState(() =>
+                            shuffleTool.recentTrackAction = newSelection.first),
+                      ),
+                    ),
+                    Divider(),
+                    Column(
                       children: [
-                        Expanded(
-                          child: Slider(
-                              key: const Key("recentTracksSlider"),
-                              divisions: 5,
-                              value: numOfRecentTracksToRemove,
-                              onChanged: getRecentTracksToRemove,
-                              min: 0,
-                              max: 50),
+                        Text(
+                            'Number of tracks to shuffle: ${shuffleTool.numTracks}/${shuffleTool.maxTracksToShuffle}'),
+                        Slider(
+                          key: const Key("NumTracksSlider"),
+                          divisions: shuffleTool.maxTracksToShuffle - 1,
+                          value: shuffleTool.numTracks.toDouble(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              shuffleTool.numTracks = newValue.toInt();
+                            });
+                          },
+                          min: 0.0,
+                          max: shuffleTool.maxTracksToShuffle.toDouble(),
                         ),
-                        Text(numOfRecentTracksToRemove.toInt().toString()),
+                      ],
+                    ),
+                    Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: SegmentedButton<ShuffleAction>(
+                            segments: const <ButtonSegment<ShuffleAction>>[
+                              ButtonSegment<ShuffleAction>(
+                                  value: ShuffleAction.addToQueue,
+                                  label: Text(
+                                    "Shuffle Into Queue",
+                                    softWrap: true,
+                                  ),
+                                  icon: Icon(Icons.queue)),
+                              ButtonSegment<ShuffleAction>(
+                                  value: ShuffleAction.addToPlaylist,
+                                  label: Text(
+                                    "Shuffle Into Playlist",
+                                    softWrap: true,
+                                  ),
+                                  icon: Icon(Icons.featured_play_list)),
+                            ],
+                            selected: <ShuffleAction>{shuffleTool.shuffleAction},
+                            onSelectionChanged:
+                                (Set<ShuffleAction> newSelection) {
+                              setState(() =>
+                                  shuffleTool.shuffleAction = newSelection.first);
+                            },
+                          ),
+                        )
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 20),
-              Stack(alignment: AlignmentDirectional.center, children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [const Text("Found Tracks:"), Text(recentTracksFound.toString())],
-                ),
-                if (loadingRecentTracks) const CircularProgressIndicator(),
-              ])
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Expanded(
-                    child: Text(
-                  'Shuffle into queue',
-                  textAlign: TextAlign.center,
-                )),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Switch(
-                      value: shuffleType == ShuffleType.shuffleIntoPlaylist,
-                      onChanged: (value) => setState(
-                          () => shuffleType = value ? ShuffleType.shuffleIntoPlaylist : ShuffleType.shuffleIntoQueue)),
-                ),
-                const Expanded(
-                    child: Text(
-                  'Shuffle into playlist',
-                  textAlign: TextAlign.center,
-                )),
-              ],
             ),
-          ),
-          const SizedBox(height: 20),
-          Text('Number of tracks: ${tracksToShuffle.toInt()}'),
-          Slider(
-            key: const Key("NumTracksSlider"),
-            divisions: maxTracksToShuffle.toInt() - 1,
-            value: tracksToShuffle,
-            onChanged: (newValue) {
-              setState(() {
-                tracksToShuffle = newValue;
-              });
-            },
-            min: 0.0,
-            max: maxTracksToShuffle,
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          if (!playerActive && shuffleType == ShuffleType.shuffleIntoQueue)
-            const Flexible(
-              child: Text(
-                'Make sure you\'re already playing something on spotify before clicking Submit',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+            if (!playerActive &&
+                shuffleTool.shuffleAction == ShuffleAction.addToQueue)
+              const Flexible(
+                child: Text(
+                  'Make sure you\'re already playing something on spotify',
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
       actions: <Widget>[
+        TextButton(
+            onPressed: shuffleTool.clearDefaultSettings,
+            child: const Text(
+              'Clear Settings',
+              softWrap: true,
+            )),
+        TextButton(
+            onPressed: shuffleTool.saveDefaultSettings,
+            child: const Text(
+              'Save Settings ',
+              softWrap: true,
+            )),
         TextButton(
           child: const Text('Cancel'),
           onPressed: () {
@@ -328,7 +410,8 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
           },
         ),
         TextButton(
-          onPressed: shuffleType == ShuffleType.shuffleIntoQueue && !playerActive
+          onPressed: (shuffleTool.shuffleAction == ShuffleAction.addToQueue &&
+                  !playerActive)
               ? null
               : () async {
                   await submit(context);
@@ -339,46 +422,3 @@ class _ShuffleDialogState extends State<ShuffleDialog> with TickerProviderStateM
     );
   }
 }
-
-class PlayPlaylistDialog extends StatelessWidget {
-  const PlayPlaylistDialog({
-    super.key,
-    required this.playerActive,
-    required this.playlist,
-  });
-
-  final bool playerActive;
-  final Playlist playlist;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Tracks added to playlist!'),
-      content: playerActive
-          ? const Text('Do you want to play the playlist now?')
-          : const Text(
-              'Make sure you\'re already playing something on spotify before clicking Play',
-              style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
-            ),
-      actions: <Widget>[
-        TextButton(
-          child: const Text('Close'),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        TextButton(
-          onPressed: playerActive
-              ? () async {
-                  Navigator.of(context).pop();
-                  await GetIt.I<APIUtils>().playPlaylist(playlist.playlistID);
-                }
-              : null,
-          child: const Text('Play'),
-        ),
-      ],
-    );
-  }
-}
-
-enum ShuffleType { shuffleIntoQueue, shuffleIntoPlaylist }

@@ -21,6 +21,7 @@
 library;
 
 import 'package:flutter/material.dart';
+//import 'package:logging/logging.dart';
 
 class ProgressDialog extends StatelessWidget {
   final String message;
@@ -28,50 +29,48 @@ class ProgressDialog extends StatelessWidget {
   final BuildContext context;
   final int upperBound;
   final Function() onCancel;
+  //final Logger lg = Logger("Shuffler/ProgressDialog");
 
-  ProgressDialog(
+  const ProgressDialog(
       {super.key,
       required this.message,
       required this.controller,
       required this.context,
       required this.upperBound,
-      required this.onCancel}) {
-    controller.addListener(() {
-      if (controller.isDismissed) {
-        Navigator.of(context).pop();
-      }
-    });
-  }
+      required this.onCancel});
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(message),
-      content: AnimatedBuilder(
-        animation: controller,
-        builder: (_, __) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: LinearProgressIndicator(
-                    value: controller.value,
+    return PopScope(
+    canPop: false,
+      child: AlertDialog(
+        title: Text(message),
+        content: AnimatedBuilder(
+          animation: controller,
+          builder: (_, __) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: LinearProgressIndicator(
+                      value: controller.value,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Text('${(controller.value * upperBound).toInt()} / $upperBound'),
-              ],
-            ),
-            const SizedBox(height: 30),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onCancel,
-                child: const Text('Cancel'),
+                  const SizedBox(width: 10),
+                  Text('${(controller.value * upperBound).toInt()} / $upperBound'),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 30),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: onCancel,
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

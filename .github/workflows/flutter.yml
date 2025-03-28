@@ -41,7 +41,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.29.0 # flutter version
+          flutter-version: 3.29.2 # flutter version
           
       - name: Display Flutter version
         run: flutter --version
@@ -53,6 +53,9 @@ jobs:
             flutter pub get
       - name: Clean project
         run: flutter clean
+
+      - name: Build Files
+        run: dart run build_runner build
 
       # Uncomment this step to verify the use of 'dart format' on each commit.
       # - name: Verify formatting
