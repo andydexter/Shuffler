@@ -238,6 +238,7 @@ class _ShuffleDialogState extends State<ShuffleDialog>
       title: const Text('Shuffle Playlist', textAlign: TextAlign.center),
       content: SliderTheme(
         data: SliderThemeData(
+          overlayShape: SliderComponentShape.noOverlay,
           trackHeight: 10,
           activeTrackColor: Theme.of(context).colorScheme.primaryContainer,
           thumbColor: Theme.of(context).colorScheme.onPrimaryContainer,
