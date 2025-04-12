@@ -50,11 +50,6 @@ class SpotifyTrack with DefaultTrackWidget implements Track {
   }
 
   @override
-  Widget getWidget() {
-    return getDefaultTrackWidget(this);
-  }
-
-  @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is SpotifyTrack) {

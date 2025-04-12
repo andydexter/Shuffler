@@ -38,12 +38,13 @@ abstract interface class Track {
   Widget getWidget();
 }
 
-mixin DefaultTrackWidget {
-  Widget getDefaultTrackWidget(Track t) {
+mixin DefaultTrackWidget implements Track {
+  @override
+  Widget getWidget() {
     return Card(
       child: ListTile(
-        leading: t.image,
-        title: Text(t.title),
+        leading: image,
+        title: Text(title),
       ),
     );
   }
