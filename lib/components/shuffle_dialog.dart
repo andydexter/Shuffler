@@ -236,6 +236,16 @@ class _ShuffleDialogState extends State<ShuffleDialog>
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Shuffle Playlist', textAlign: TextAlign.center),
+      titlePadding: const EdgeInsets.only(right: 15.0, left: 15.0, top: 24.0),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 15.0,
+        vertical: 15.0,
+      ),
+      actionsPadding: const EdgeInsets.only(
+        left: 15.0,
+        right: 15.0,
+        bottom: 24.0,
+      ),
       content: SliderTheme(
         data: SliderThemeData(
           overlayShape: SliderComponentShape.noOverlay,
@@ -260,7 +270,11 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                   spacing: 5,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      padding: const EdgeInsets.only(
+                        left: 5.0,
+                        right: 5.0,
+                        bottom: 5.0,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -281,7 +295,7 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                                     Expanded(
                                       child: Slider(
                                         key: const Key("recentTracksSlider"),
-                                        divisions: 5,
+                                        divisions: 10,
                                         value:
                                             shuffleTool.numRecentTracksToSearch
                                                 .toDouble(),
@@ -328,12 +342,15 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                         segments: const [
                           ButtonSegment<RecentTrackAction>(
                             value: RecentTrackAction.exclude,
-                            label: Text("Ommit"),
+                            label: Text("Ommit", textAlign: TextAlign.center),
                             icon: Icon(Icons.cancel),
                           ),
                           ButtonSegment<RecentTrackAction>(
                             value: RecentTrackAction.moveToEnd,
-                            label: Text("Move to End"),
+                            label: Text(
+                              "Move to End",
+                              textAlign: TextAlign.center,
+                            ),
                             icon: Icon(Icons.last_page),
                           ),
                         ],
@@ -341,11 +358,13 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                           shuffleTool.recentTrackAction,
                         },
                         onSelectionChanged:
-                            (newSelection) => setState(
-                              () =>
-                                  shuffleTool.recentTrackAction =
-                                      newSelection.first,
-                            ),
+                            shuffleTool.numRecentTracksToSearch == 0
+                                ? null
+                                : (newSelection) => setState(
+                                  () =>
+                                      shuffleTool.recentTrackAction =
+                                          newSelection.first,
+                                ),
                       ),
                     ),
                     Divider(),
@@ -381,6 +400,7 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                                 label: Text(
                                   "Shuffle Into Queue",
                                   softWrap: true,
+                                  textAlign: TextAlign.center,
                                 ),
                                 icon: Icon(Icons.queue),
                               ),
@@ -389,6 +409,7 @@ class _ShuffleDialogState extends State<ShuffleDialog>
                                 label: Text(
                                   "Shuffle Into Playlist",
                                   softWrap: true,
+                                  textAlign: TextAlign.center,
                                 ),
                                 icon: Icon(Icons.featured_play_list),
                               ),
@@ -434,11 +455,11 @@ class _ShuffleDialogState extends State<ShuffleDialog>
           children: [
             TextButton(
               onPressed: shuffleTool.clearDefaultSettings,
-              child: const Text('Clear Settings', softWrap: true),
+              child: const Text('Clear', softWrap: true),
             ),
             TextButton(
               onPressed: shuffleTool.saveDefaultSettings,
-              child: const Text('Save Settings ', softWrap: true),
+              child: const Text('Save', softWrap: true),
             ),
           ],
         ),
