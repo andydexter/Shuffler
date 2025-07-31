@@ -41,14 +41,6 @@ abstract class Playlist {
   /// Constructs a Playlist object with the given [name], [tracks], and [image].
   Playlist({required this.name, this.tracks = const [], required this.image});
 
-  /// Returns a list of shuffled tracks.
-  List<Track> getShuffledTracks() {
-    List<Track> shuffledTracks = [...tracks];
-    shuffledTracks.shuffle(Random());
-
-    return shuffledTracks;
-  }
-
   /// Loads the tracks for the playlist.
   /// This method should be overridden by subclasses to load the tracks from the API or similar.
   /// This method MUST store the fetched tracks in the [tracks] property.
